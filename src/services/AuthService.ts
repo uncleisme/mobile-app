@@ -1,60 +1,76 @@
 import { User } from '../types';
-import { mockUsers } from './mockData';
+import { supabase } from './supabaseClient';
 
 export class AuthService {
   private static currentUser: User | null = null;
 
   static async login(email: string, password: string): Promise<User> {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    // Mock authentication - accept any password for demo users
-    const user = mockUsers.find(u => u.email === email);
-    
-    if (!user) {
-      throw new Error('Invalid email or password');
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error || !data.user) {
+      throw new Error(error?.message || 'Invalid email or password');
     }
-
+    const user: User = {
+      id: data.user.id,
+      email: data.user.email || '',
+      name: data.user.user_metadata?.name || data.user.email || '',
+      role: data.user.user_metadata?.role || 'technician',
+      phoneNumber: data.user.user_metadata?.phoneNumber,
+      profilePhoto: data.user.user_metadata?.profilePhoto,
+      createdAt: new Date(data.user.created_at),
+    };
     this.currentUser = user;
-    localStorage.setItem('currentUser', JSON.stringify(user));
-    
     return user;
   }
 
   static async logout(): Promise<void> {
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await supabase.auth.signOut();
     this.currentUser = null;
-    localStorage.removeItem('currentUser');
   }
 
-  static getCurrentUser(): User | null {
+  static async getCurrentUser(): Promise<User | null> {
     if (this.currentUser) {
       return this.currentUser;
     }
-
-    const stored = localStorage.getItem('currentUser');
-    if (stored) {
-      this.currentUser = JSON.parse(stored);
-      return this.currentUser;
+    const { data } = await supabase.auth.getUser();
+    if (data.user) {
+      const user: User = {
+        id: data.user.id,
+        email: data.user.email || '',
+        name: data.user.user_metadata?.name || data.user.email || '',
+        role: data.user.user_metadata?.role || 'technician',
+        phoneNumber: data.user.user_metadata?.phoneNumber,
+        profilePhoto: data.user.user_metadata?.profilePhoto,
+        createdAt: new Date(data.user.created_at),
+      };
+      this.currentUser = user;
+      return user;
     }
-
     return null;
   }
 
   static async updateProfile(updates: Partial<User>): Promise<User> {
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
     if (!this.currentUser) {
       throw new Error('No user logged in');
     }
-
-    this.currentUser = { ...this.currentUser, ...updates };
-    localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
-    
-    return this.currentUser;
+    const { data, error } = await supabase.auth.updateUser({ data: updates });
+    if (error || !data.user) {
+      throw new Error(error?.message || 'Failed to update profile');
+    }
+    const user: User = {
+      id: data.user.id,
+      email: data.user.email || '',
+      name: data.user.user_metadata?.name || data.user.email || '',
+      role: data.user.user_metadata?.role || 'technician',
+      phoneNumber: data.user.user_metadata?.phoneNumber,
+      profilePhoto: data.user.user_metadata?.profilePhoto,
+      createdAt: new Date(data.user.created_at),
+    };
+    this.currentUser = user;
+    return user;
   }
 
-  static isAuthenticated(): boolean {
-    return this.getCurrentUser() !== null;
+  static async isAuthenticated(): Promise<boolean> {
+    const user = await this.getCurrentUser();
+    return user !== null;
   }
 }

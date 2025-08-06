@@ -7,9 +7,13 @@ export const useAuth = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const currentUser = AuthService.getCurrentUser();
-    setUser(currentUser);
-    setLoading(false);
+    const fetchUser = async () => {
+      setLoading(true);
+      const currentUser = await AuthService.getCurrentUser();
+      setUser(currentUser);
+      setLoading(false);
+    };
+    fetchUser();
   }, []);
 
   const login = async (email: string, password: string) => {
