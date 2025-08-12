@@ -1,10 +1,8 @@
 import { WorkOrder, Asset, MaintenanceLog } from '../types';
-import { mockWorkOrders, mockAssets, mockMaintenanceLogs } from './mockData';
 import { supabase } from './supabaseClient';
 
 export class WorkOrderService {
-  private static workOrders = [...mockWorkOrders];
-  private static maintenanceLogs = [...mockMaintenanceLogs];
+  // All data sourced from Supabase. No local mock state.
 
   // Minimal column set used by the app UI (list + detail header)
   private static readonly baseSelect = `
@@ -76,9 +74,8 @@ export class WorkOrderService {
       const rows = Array.isArray(data) ? data : [];
       return rows.map(this.mapRowToWorkOrder);
     } catch (err) {
-      console.warn('Supabase fetch failed, falling back to mock work orders:', err);
-      await new Promise(resolve => setTimeout(resolve, 300));
-      return this.workOrders;
+      console.warn('Supabase fetch failed for work orders:', err);
+      return [];
     }
   }
 
@@ -94,15 +91,36 @@ export class WorkOrderService {
       if (!data) return null;
       return this.mapRowToWorkOrder(data);
     } catch (err) {
-      console.warn('Supabase fetch by id failed, falling back to mock:', err);
-      await new Promise(resolve => setTimeout(resolve, 300));
-      return this.workOrders.find(wo => wo.id === id) || null;
+      console.warn('Supabase fetch by id failed:', err);
+      return null;
     }
   }
 
   static async getAssetById(id: string): Promise<Asset | null> {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    return mockAssets.find(asset => asset.id === id) || null;
+    try {
+      const { data, error } = await supabase
+        .from('assets')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) return null;
+      // Minimal mapping; adjust as your schema requires
+      return {
+        id: String(data.id),
+        name: String(data.name || ''),
+        type: String(data.type || ''),
+        location: String(data.location || ''),
+        serialNumber: data.serial_number ? String(data.serial_number) : undefined,
+        manufacturer: data.manufacturer ? String(data.manufacturer) : undefined,
+        model: data.model ? String(data.model) : undefined,
+        installationDate: data.installation_date ? new Date(data.installation_date) : undefined,
+        status: (String(data.status || 'operational') as Asset['status']),
+      } as Asset;
+    } catch (err) {
+      console.warn('Failed to fetch asset:', err);
+      return null;
+    }
   }
 
   static async completeWorkOrder(
@@ -111,39 +129,15 @@ export class WorkOrderService {
     hoursSpent: number,
     photos: string[] = []
   ): Promise<void> {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    const workOrderIndex = this.workOrders.findIndex(wo => wo.id === workOrderId);
-    if (workOrderIndex === -1) {
-      throw new Error('Work order not found');
-    }
-
-    // Update work order status
-    this.workOrders[workOrderIndex] = {
-      ...this.workOrders[workOrderIndex],
-      status: 'completed',
-      completedDate: new Date(),
-      actualHours: hoursSpent,
-      updatedAt: new Date(),
-    };
-
-    // Create maintenance log
-    const maintenanceLog: MaintenanceLog = {
-      id: `log_${Date.now()}`,
-      workOrderId,
-      technicianId: this.workOrders[workOrderIndex].assignedTo || 'unknown',
-      notes,
-      completedAt: new Date(),
-      photos,
-      hoursSpent,
-    };
-
-    this.maintenanceLogs.push(maintenanceLog);
+    // Implement your Supabase update logic here when ready.
+    // For now, perform no-op to avoid mock mutations.
+    void workOrderId; void notes; void hoursSpent; void photos;
+    return;
   }
 
   static async getMaintenanceLogsForWorkOrder(workOrderId: string): Promise<MaintenanceLog[]> {
-    await new Promise(resolve => setTimeout(resolve, 400));
-    return this.maintenanceLogs.filter(log => log.workOrderId === workOrderId);
+    void workOrderId;
+    return [];
   }
 
   static getWorkOrdersByStatus(workOrders: WorkOrder[], status: string): WorkOrder[] {

@@ -3,15 +3,15 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Card } from '../ui/Card';
 import { useAuth } from '../../contexts/AuthContext';
-import { Wrench, Eye, EyeOff, AlertCircle, Info } from 'lucide-react';
+import { Wrench, Eye, EyeOff, AlertCircle } from 'lucide-react';
 
 interface LoginFormProps {
   onLoginSuccess?: () => void;
 }
 
 export const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
-  const [email, setEmail] = useState('john.doe@company.com');
-  const [password, setPassword] = useState('password');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -63,12 +63,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
     }
   };
 
-  const handleDemoLogin = (demoEmail: string, demoPassword: string) => {
-    setEmail(demoEmail);
-    setPassword(demoPassword);
-    setError('');
-    setValidationErrors({});
-  };
+  // No demo autofill. Users must enter their credentials.
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
@@ -147,52 +142,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
             </Button>
           </form>
 
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-              <div className="flex items-start">
-                <Info className="w-4 h-4 text-blue-600 mr-2 mt-0.5" />
-                <div className="text-sm text-blue-800">
-                  <p className="font-medium mb-1">Demo Accounts Available</p>
-                  <p>Click on any account below to auto-fill the login form</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <button
-                type="button"
-                onClick={() => handleDemoLogin('john.doe@company.com', 'password')}
-                className="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
-              >
-                <div className="text-sm">
-                  <p className="font-medium text-gray-900">John Doe (Technician)</p>
-                  <p className="text-gray-600">john.doe@company.com</p>
-                </div>
-              </button>
-              
-              <button
-                type="button"
-                onClick={() => handleDemoLogin('admin@company.com', 'admin123')}
-                className="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
-              >
-                <div className="text-sm">
-                  <p className="font-medium text-gray-900">Admin User</p>
-                  <p className="text-gray-600">admin@company.com</p>
-                </div>
-              </button>
-              
-              <button
-                type="button"
-                onClick={() => handleDemoLogin('manager@company.com', 'manager123')}
-                className="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
-              >
-                <div className="text-sm">
-                  <p className="font-medium text-gray-900">Manager User</p>
-                  <p className="text-gray-600">manager@company.com</p>
-                </div>
-              </button>
-            </div>
-          </div>
+          {/* Demo section removed */}
         </Card>
       </div>
     </div>
