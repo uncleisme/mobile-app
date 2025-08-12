@@ -55,8 +55,10 @@ export class AuthService {
   }
 
   static async logout(): Promise<void> {
+    console.log('AuthService.logout called');
     this.currentUser = null;
     this.saveUserToStorage(null);
+    console.log('User cleared from memory and storage');
   }
 
   static async getCurrentUser(): Promise<User | null> {

@@ -48,8 +48,16 @@ export const useAuth = () => {
   };
 
   const logout = async () => {
-    await AuthService.logout();
-    setUser(null);
+    try {
+      await AuthService.logout();
+      setUser(null);
+      // Force a small delay to ensure state propagation
+      await new Promise(resolve => setTimeout(resolve, 50));
+    } catch (error) {
+      console.error('Logout failed:', error);
+      // Even if logout fails, clear the user state
+      setUser(null);
+    }
   };
 
   const updateProfile = async (updates: Partial<User>) => {
