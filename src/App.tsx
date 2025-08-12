@@ -15,6 +15,9 @@ type WorkOrderView = 'list' | 'detail' | 'complete';
 function App() {
   const { user, loading } = useAuth();
   const [activeTab, setActiveTab] = useState<AppView>('dashboard');
+  
+  // Debug logging
+  console.log('App component - user:', user, 'loading:', loading);
   const [workOrderView, setWorkOrderView] = useState<WorkOrderView>('list');
   const [selectedWorkOrderId, setSelectedWorkOrderId] = useState<string>('');
   const [selectedWorkOrderTitle, setSelectedWorkOrderTitle] = useState<string>('');
@@ -45,8 +48,13 @@ function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <LoadingSpinner size="lg" />
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4">
+            <LoadingSpinner size="md" />
+          </div>
+          <p className="text-gray-600">Loading CMMS...</p>
+        </div>
       </div>
     );
   }

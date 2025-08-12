@@ -5,9 +5,13 @@ export class WorkOrderService {
   private static workOrders = [...mockWorkOrders];
   private static maintenanceLogs = [...mockMaintenanceLogs];
 
+  // Mock methods (working version) - NO DATABASE CALLS
   static async getWorkOrdersForTechnician(technicianId: string): Promise<WorkOrder[]> {
-    await new Promise(resolve => setTimeout(resolve, 800));
-    return this.workOrders.filter(wo => wo.assignedTo === technicianId);
+    await new Promise(resolve => setTimeout(resolve, 500)); // Faster for demo
+    console.log('WorkOrderService: Returning mock work orders for technician:', technicianId);
+    console.log('Available work orders:', this.workOrders);
+    // Return all work orders for demo purposes since we're using mock data
+    return this.workOrders;
   }
 
   static async getWorkOrderById(id: string): Promise<WorkOrder | null> {
@@ -46,7 +50,7 @@ export class WorkOrderService {
     const maintenanceLog: MaintenanceLog = {
       id: `log_${Date.now()}`,
       workOrderId,
-      technicianId: this.workOrders[workOrderIndex].assignedTo,
+      technicianId: this.workOrders[workOrderIndex].assignedTo || 'unknown',
       notes,
       completedAt: new Date(),
       photos,
@@ -73,7 +77,8 @@ export class WorkOrderService {
     tomorrow.setDate(tomorrow.getDate() + 1);
 
     return workOrders.filter(wo => {
-      const scheduledDate = new Date(wo.scheduledDate);
+      // Use due_date from your database schema
+      const scheduledDate = new Date(wo.due_date);
       scheduledDate.setHours(0, 0, 0, 0);
       return scheduledDate >= today && scheduledDate < tomorrow;
     });
@@ -84,8 +89,9 @@ export class WorkOrderService {
     today.setHours(0, 0, 0, 0);
 
     return workOrders.filter(wo => {
-      if (wo.status === 'completed') return false;
-      const scheduledDate = new Date(wo.scheduledDate);
+      if (wo.status === 'Completed') return false; // Match your DB status values
+      // Use due_date from your database schema
+      const scheduledDate = new Date(wo.due_date);
       scheduledDate.setHours(0, 0, 0, 0);
       return scheduledDate < today;
     });

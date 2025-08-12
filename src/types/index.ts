@@ -23,18 +23,44 @@ export interface Asset {
 
 export interface WorkOrder {
   id: string;
+  work_order_id: string;
+  work_type: string;
+  asset_id: string;
+  location_id: string;
+  status: string; // Your DB uses text, not enum
+  priority: string; // Your DB uses text, not enum  
   title: string;
   description: string;
-  status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
-  priority: 'low' | 'medium' | 'high' | 'critical';
-  assignedTo: string; // user ID
-  assetId: string;
-  scheduledDate: Date;
+  created_date: Date;
+  due_date: Date;
+  requested_by: string;
+  assigned_to?: string;
+  recurrence_rule?: string;
+  recurrence_start_date?: Date;
+  recurrence_end_date?: Date;
+  next_scheduled_date?: Date;
+  job_type?: string;
+  service_provider_id?: string;
+  contact_person?: string;
+  contact_number?: string;
+  contact_email?: string;
+  reference_text?: string;
+  unit_number?: string;
+  repair_contact_person?: string;
+  repair_contact_number?: string;
+  repair_contact_email?: string;
+  created_at?: Date;
+  updated_at?: Date;
+  
+  // Legacy fields for backward compatibility (optional)
+  scheduledDate?: Date; // Maps to due_date
   completedDate?: Date;
   estimatedHours?: number;
   actualHours?: number;
-  createdAt: Date;
-  updatedAt: Date;
+  assignedTo?: string; // Maps to assigned_to
+  assetId?: string; // Maps to asset_id
+  createdAt?: Date; // Maps to created_at
+  updatedAt?: Date; // Maps to updated_at
 }
 
 export interface MaintenanceLog {

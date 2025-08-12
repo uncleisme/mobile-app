@@ -7,18 +7,38 @@ export const useAuth = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchUser = async () => {
+    const initializeAuth = async () => {
       setLoading(true);
-      const currentUser = await AuthService.getCurrentUser();
-      setUser(currentUser);
-      setLoading(false);
+      
+      try {
+        // Simple auth check without complex Supabase calls
+        const currentUser = await AuthService.getCurrentUser();
+        setUser(currentUser);
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+        // Set user to null if auth fails
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
     };
-    fetchUser();
+
+    initializeAuth();
   }, []);
 
   const login = async (email: string, password: string) => {
+    console.log('useAuth.login called with:', { email, password: '***' });
     const user = await AuthService.login(email, password);
-    setUser(user);
+    console.log('AuthService returned user:', user);
+    
+    // Force state update with functional update to ensure re-render
+    setUser(() => {
+      console.log('Setting user state to:', user);
+      return user;
+    });
+    
+    console.log('User state updated in useAuth, new user:', user);
+    console.log('isAuthenticated will be:', !!user);
     return user;
   };
 

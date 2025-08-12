@@ -18,9 +18,14 @@ export const LoginForm: React.FC = () => {
     setLoading(true);
     setError('');
 
+    console.log('Login form submitted with:', { email, password: '***' });
+
     try {
-      await login(email, password);
+      const user = await login(email, password);
+      console.log('Login successful, user:', user);
+      // Login successful - the App component will automatically redirect to dashboard
     } catch (err) {
+      console.error('Login failed:', err);
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {
       setLoading(false);
