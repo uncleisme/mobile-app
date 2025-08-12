@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { WorkOrder } from '../../types';
 import { WorkOrderService } from '../../services/WorkOrderService';
 import { useAuth } from '../../contexts/AuthContext';
+import { Header } from '../layout/Header';
 import { Search, Filter, Clock, MapPin, AlertTriangle, CheckCircle2, PlayCircle, Circle } from 'lucide-react';
 
 interface WorkOrdersListProps {
@@ -115,50 +116,52 @@ export const WorkOrdersList: React.FC<WorkOrdersListProps> = ({ onWorkOrderClick
   };
 
   return (
-    <div className="min-h-screen bg-white pb-20">
-      {/* Header area distinct from Dashboard */}
-      <div className="bg-gradient-to-r from-indigo-600 to-blue-600 text-white p-6 rounded-b-2xl shadow">
-        <h1 className="text-xl font-semibold">Work Orders</h1>
-        <p className="text-sm text-indigo-100 mt-1">Search, filter and manage all your jobs</p>
+    <div className="min-h-screen bg-gray-50 pb-20">
+      {/* Shared Header */}
+      <Header title="" />
 
-        <div className="mt-4 flex items-center gap-2">
-          <div className="flex items-center bg-white/10 rounded-lg px-3 py-2 flex-1">
-            <Search size={18} className="opacity-90 mr-2" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search by title, description or location"
-              className="bg-transparent outline-none placeholder-indigo-100/70 text-white w-full"
-            />
-          </div>
-          <div className="bg-white/10 rounded-lg px-3 py-2 flex items-center">
-            <Filter size={18} className="opacity-90 mr-2" />
-            <select
-              value={sort}
-              onChange={(e) => setSort(e.target.value as any)}
-              className="bg-transparent outline-none text-white"
-            >
-              <option value="due_asc" className="text-gray-900">Due Date ↑</option>
-              <option value="due_desc" className="text-gray-900">Due Date ↓</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Status pills */}
-        <div className="mt-4 flex gap-2 overflow-x-auto no-scrollbar">
-          {STATUS_OPTIONS.map(opt => {
-            const Icon = opt.icon;
-            const active = status === opt.id;
-            return (
-              <button
-                key={opt.id}
-                onClick={() => setStatus(opt.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm whitespace-nowrap transition-colors ${active ? 'bg-white text-indigo-600' : 'bg-white/10 text-white hover:bg-white/20'}`}
+      {/* Controls */}
+      <div className="px-4 pt-4 max-w-md mx-auto">
+        <div className="bg-white rounded-xl shadow-sm border p-4">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center bg-gray-50 rounded-lg px-3 py-2 flex-1 border border-gray-200">
+              <Search size={18} className="text-gray-500 mr-2" />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search by title, description or location"
+                className="bg-transparent outline-none placeholder-gray-400 text-gray-900 w-full"
+              />
+            </div>
+            <div className="bg-gray-50 rounded-lg px-3 py-2 flex items-center border border-gray-200">
+              <Filter size={18} className="text-gray-500 mr-2" />
+              <select
+                value={sort}
+                onChange={(e) => setSort(e.target.value as any)}
+                className="bg-transparent outline-none text-gray-900"
               >
-                <Icon size={16} /> {opt.label}
-              </button>
-            );
-          })}
+                <option value="due_asc">Due Date ↑</option>
+                <option value="due_desc">Due Date ↓</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Status pills */}
+          <div className="mt-3 flex gap-2 overflow-x-auto no-scrollbar">
+            {STATUS_OPTIONS.map(opt => {
+              const Icon = opt.icon;
+              const active = status === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  onClick={() => setStatus(opt.id)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm whitespace-nowrap transition-colors ${active ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                >
+                  <Icon size={16} /> {opt.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
