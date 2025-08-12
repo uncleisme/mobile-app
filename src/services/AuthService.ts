@@ -2,13 +2,39 @@ import { User } from '../types';
 import { supabase } from './supabaseClient';
 
 export class AuthService {
+  private static readonly USER_STORAGE_KEY = 'cmms_current_user';
   private static currentUser: User | null = null;
+
+  private static saveUserToStorage(user: User | null) {
+    if (user) {
+      localStorage.setItem(this.USER_STORAGE_KEY, JSON.stringify(user));
+    } else {
+      localStorage.removeItem(this.USER_STORAGE_KEY);
+    }
+  }
+
+  private static loadUserFromStorage(): User | null {
+    try {
+      const userJson = localStorage.getItem(this.USER_STORAGE_KEY);
+      if (!userJson) return null;
+      
+      const user = JSON.parse(userJson);
+      // Convert string dates back to Date objects
+      if (user.createdAt) {
+        user.createdAt = new Date(user.createdAt);
+      }
+      return user;
+    } catch (error) {
+      console.error('Failed to load user from storage:', error);
+      return null;
+    }
+  }
 
   static async login(email: string, password: string): Promise<User> {
     console.log('AuthService.login called with:', { email, password: '***' });
     
     // Simple mock login for demo purposes
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
     // Create a mock user
     const user: User = {
@@ -23,13 +49,20 @@ export class AuthService {
     
     console.log('AuthService created mock user:', user);
     this.currentUser = user;
-    console.log('AuthService cached user, returning:', user);
+    this.saveUserToStorage(user);
+    console.log('AuthService saved user to storage, returning:', user);
     return user;
   }
 
   static async logout(): Promise<void> {
-    await supabase.auth.signOut();
-    this.currentUser = null;
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Error signing out from Supabase:', error);
+    } finally {
+      this.currentUser = null;
+      this.saveUserToStorage(null);
+    }
   }
 
   static async getCurrentUser(): Promise<User | null> {
@@ -38,8 +71,15 @@ export class AuthService {
       return this.currentUser;
     }
 
-    // For now, return null to avoid Supabase connection issues
-    // This will show the login form instead of hanging
+    // Try to load user from storage
+    const storedUser = this.loadUserFromStorage();
+    if (storedUser) {
+      this.currentUser = storedUser;
+      console.log('Loaded user from storage:', storedUser);
+      return storedUser;
+    }
+
+    // No user in memory or storage
     return null;
   }
 

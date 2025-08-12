@@ -5,7 +5,11 @@ import { Card } from '../ui/Card';
 import { useAuth } from '../../hooks/useAuth';
 import { Wrench } from 'lucide-react';
 
-export const LoginForm: React.FC = () => {
+interface LoginFormProps {
+  onLoginSuccess?: () => void;
+}
+
+export const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
   const [email, setEmail] = useState('john.doe@company.com');
   const [password, setPassword] = useState('password');
   const [loading, setLoading] = useState(false);
@@ -23,7 +27,14 @@ export const LoginForm: React.FC = () => {
     try {
       const user = await login(email, password);
       console.log('Login successful, user:', user);
-      // Login successful - the App component will automatically redirect to dashboard
+      
+      // Small delay to ensure state updates propagate
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Call the success callback if provided
+      if (onLoginSuccess) {
+        onLoginSuccess();
+      }
     } catch (err) {
       console.error('Login failed:', err);
       setError(err instanceof Error ? err.message : 'Login failed');

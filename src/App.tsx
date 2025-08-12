@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { LoginForm } from './components/auth/LoginForm';
 import { Dashboard } from './components/dashboard/Dashboard';
 import { WorkOrderDetail } from './components/workorders/WorkOrderDetail';
@@ -8,6 +8,7 @@ import { LeaveManagement } from './components/leave/LeaveManagement';
 import { BottomNavigation } from './components/layout/BottomNavigation';
 import { useAuth } from './hooks/useAuth';
 import { LoadingSpinner } from './components/ui/LoadingSpinner';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 type AppView = 'dashboard' | 'work-orders' | 'leave' | 'profile';
 type WorkOrderView = 'list' | 'detail' | 'complete';
@@ -46,6 +47,7 @@ function App() {
     setSelectedWorkOrderTitle('');
   };
 
+  // Show loading state only during initial load
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
@@ -59,8 +61,21 @@ function App() {
     );
   }
 
-  if (!user) {
-    return <LoginForm />;
+  // If not loading and no user, show login form
+  if (!user && !loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="bg-white rounded-2xl shadow-lg p-8">
+            <h1 className="text-2xl font-bold text-center text-gray-800 mb-8">CMMS Login</h1>
+            <LoginForm onLoginSuccess={() => {
+              // The useAuth hook will update the user state, causing a re-render
+              console.log('Login successful, redirecting to dashboard...');
+            }} />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const renderMainContent = () => {
@@ -106,19 +121,21 @@ function App() {
   const shouldShowBottomNav = workOrderView === 'list';
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {renderMainContent()}
-      
-      {shouldShowBottomNav && (
-        <BottomNavigation
-          activeTab={activeTab}
-          onTabChange={(tab) => {
-            setActiveTab(tab as AppView);
-            setWorkOrderView('list');
-          }}
-        />
-      )}
-    </div>
+    <ErrorBoundary>
+      <div className="min-h-screen bg-gray-50">
+        {renderMainContent()}
+        
+        {shouldShowBottomNav && (
+          <BottomNavigation
+            activeTab={activeTab}
+            onTabChange={(tab) => {
+              setActiveTab(tab as AppView);
+              setWorkOrderView('list');
+            }}
+          />
+        )}
+      </div>
+    </ErrorBoundary>
   );
 }
 

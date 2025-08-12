@@ -28,18 +28,19 @@ export const useAuth = () => {
 
   const login = async (email: string, password: string) => {
     console.log('useAuth.login called with:', { email, password: '***' });
-    const user = await AuthService.login(email, password);
-    console.log('AuthService returned user:', user);
-    
-    // Force state update with functional update to ensure re-render
-    setUser(() => {
-      console.log('Setting user state to:', user);
+    try {
+      const user = await AuthService.login(email, password);
+      console.log('AuthService returned user:', user);
+      
+      // Single state update
+      setUser(user);
+      console.log('User state updated in useAuth, new user:', user);
       return user;
-    });
-    
-    console.log('User state updated in useAuth, new user:', user);
-    console.log('isAuthenticated will be:', !!user);
-    return user;
+    } catch (error) {
+      console.error('Login failed:', error);
+      setUser(null);
+      throw error;
+    }
   };
 
   const logout = async () => {
