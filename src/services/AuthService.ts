@@ -55,14 +55,8 @@ export class AuthService {
   }
 
   static async logout(): Promise<void> {
-    try {
-      await supabase.auth.signOut();
-    } catch (error) {
-      console.error('Error signing out from Supabase:', error);
-    } finally {
-      this.currentUser = null;
-      this.saveUserToStorage(null);
-    }
+    this.currentUser = null;
+    this.saveUserToStorage(null);
   }
 
   static async getCurrentUser(): Promise<User | null> {
@@ -87,20 +81,15 @@ export class AuthService {
     if (!this.currentUser) {
       throw new Error('No user logged in');
     }
-    const { data, error } = await supabase.auth.updateUser({ data: updates });
-    if (error || !data.user) {
-      throw new Error(error?.message || 'Failed to update profile');
-    }
+    
+    // Update the current user with the provided updates
     const user: User = {
-      id: data.user.id,
-      email: data.user.email || '',
-      name: data.user.user_metadata?.name || data.user.email || '',
-      role: data.user.user_metadata?.role || 'technician',
-      phoneNumber: data.user.user_metadata?.phoneNumber,
-      profilePhoto: data.user.user_metadata?.profilePhoto,
-      createdAt: new Date(data.user.created_at),
+      ...this.currentUser,
+      ...updates,
     };
+    
     this.currentUser = user;
+    this.saveUserToStorage(user);
     return user;
   }
 
