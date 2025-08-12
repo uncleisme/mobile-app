@@ -71,7 +71,7 @@ export const ProfileSettings: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      <Header title="" showNotifications={false} />
+      <Header title="Profile" />
       
       <div className="px-4 py-6 max-w-md mx-auto space-y-6">
         {/* Profile Photo */}

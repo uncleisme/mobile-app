@@ -19,8 +19,10 @@ export const Card: React.FC<CardProps> = ({
     lg: 'p-6',
   };
 
-  const baseClasses = `bg-white rounded-xl shadow-sm border border-gray-100 ${paddingClasses[padding]}`;
-  const interactiveClasses = onClick ? 'cursor-pointer hover:shadow-md transition-shadow duration-200 active:scale-[0.98]' : '';
+  const baseClasses = `rounded-xl border ${paddingClasses[padding]} bg-gradient-to-br from-brand-50/50 to-white shadow-sm border-brand-100`;
+  const interactiveClasses = onClick 
+    ? 'cursor-pointer hover:shadow-md hover:border-brand-200 transition duration-200 active:scale-[0.98]'
+    : '';
 
   return (
     <div 

@@ -118,7 +118,7 @@ export const WorkOrdersList: React.FC<WorkOrdersListProps> = ({ onWorkOrderClick
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* Shared Header */}
-      <Header title="" />
+      <Header title="Work Orders" />
 
       {/* Controls */}
       <div className="px-4 pt-4 max-w-md mx-auto">
