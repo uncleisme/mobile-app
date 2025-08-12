@@ -5,6 +5,7 @@ import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '../../services/supabaseClient';
 
 export const ProfileSettings: React.FC = () => {
   const { user, logout, updateProfile } = useAuth();
@@ -15,11 +16,34 @@ export const ProfileSettings: React.FC = () => {
     phoneNumber: user?.phoneNumber || '',
   });
 
-  const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      // Photo upload not implemented yet – integrate Supabase Storage or similar.
-      console.warn('Profile photo upload not implemented. Skipping mock URL assignment.');
+  const [uploading, setUploading] = useState(false);
+
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      if (!user?.id) throw new Error('No authenticated user');
+      setUploading(true);
+
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+      const path = `${user.id}-${Date.now()}.${ext}`;
+
+      const { error: uploadError } = await supabase
+        .storage
+        .from('avatars')
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (uploadError) throw uploadError;
+
+      const { data: pub } = supabase.storage.from('avatars').getPublicUrl(path);
+      const publicUrl = pub.publicUrl;
+      await updateProfile({ profilePhoto: publicUrl });
+    } catch (err) {
+      console.error('Avatar upload failed:', err);
+      alert(err instanceof Error ? err.message : 'Avatar upload failed');
+    } finally {
+      setUploading(false);
+      // clear input value to allow re-selecting same file
+      if (event.target) event.target.value = '';
     }
   };
 
@@ -67,13 +91,14 @@ export const ProfileSettings: React.FC = () => {
               )}
             </div>
             
-            <label className="absolute bottom-3 right-0 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center cursor-pointer hover:bg-blue-700 transition-colors duration-200">
+            <label className={`absolute bottom-3 right-0 w-8 h-8 rounded-full flex items-center justify-center cursor-pointer transition-colors duration-200 ${uploading ? 'bg-blue-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}>
               <Camera className="w-4 h-4 text-white" />
               <input
                 type="file"
                 accept="image/*"
                 capture="user"
                 onChange={handlePhotoUpload}
+                disabled={uploading}
                 className="hidden"
               />
             </label>
