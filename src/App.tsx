@@ -1,27 +1,29 @@
 import { useState } from 'react';
 import { LoginForm } from './components/auth/LoginForm';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { Dashboard } from './components/dashboard/Dashboard';
 import { WorkOrderDetail } from './components/workorders/WorkOrderDetail';
 import { CompleteWorkOrderForm } from './components/workorders/CompleteWorkOrderForm';
 import { ProfileSettings } from './components/profile/ProfileSettings';
 import { LeaveManagement } from './components/leave/LeaveManagement';
 import { BottomNavigation } from './components/layout/BottomNavigation';
-import { useAuth } from './hooks/useAuth';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LoadingSpinner } from './components/ui/LoadingSpinner';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
 type AppView = 'dashboard' | 'work-orders' | 'leave' | 'profile';
 type WorkOrderView = 'list' | 'detail' | 'complete';
 
-function App() {
-  const { user, loading } = useAuth();
+// Main App Content Component (wrapped by AuthProvider)
+function AppContent() {
+  const { user, loading, isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState<AppView>('dashboard');
-  
-  // Debug logging
-  console.log('App component - user:', user, 'loading:', loading);
   const [workOrderView, setWorkOrderView] = useState<WorkOrderView>('list');
   const [selectedWorkOrderId, setSelectedWorkOrderId] = useState<string>('');
   const [selectedWorkOrderTitle, setSelectedWorkOrderTitle] = useState<string>('');
+
+  // Debug logging
+  console.log('App component - user:', user, 'loading:', loading, 'isAuthenticated:', isAuthenticated);
 
   const handleWorkOrderClick = (workOrderId: string) => {
     setSelectedWorkOrderId(workOrderId);
@@ -47,33 +49,13 @@ function App() {
     setSelectedWorkOrderTitle('');
   };
 
-  // Show loading state only during initial load
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4">
-            <LoadingSpinner size="md" />
-          </div>
-          <p className="text-gray-600">Loading CMMS...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // If not loading and no user, show login form
-  if (!user && !loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          <div className="bg-white rounded-2xl shadow-lg p-8">
-            <h1 className="text-2xl font-bold text-center text-gray-800 mb-8">CMMS Login</h1>
-            <LoginForm />
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const handleLoginSuccess = () => {
+    // Reset any navigation state on successful login
+    setActiveTab('dashboard');
+    setWorkOrderView('list');
+    setSelectedWorkOrderId('');
+    setSelectedWorkOrderTitle('');
+  };
 
   const renderMainContent = () => {
     if (activeTab === 'work-orders' || (activeTab === 'dashboard' && workOrderView !== 'list')) {
@@ -117,8 +99,25 @@ function App() {
 
   const shouldShowBottomNav = workOrderView === 'list';
 
+  // Show loading state during authentication check
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4">
+            <LoadingSpinner size="md" />
+          </div>
+          <p className="text-gray-600">Loading CMMS...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login form for unauthenticated users
   return (
-    <ErrorBoundary>
+    <ProtectedRoute
+      fallback={<LoginForm onLoginSuccess={handleLoginSuccess} />}
+    >
       <div className="min-h-screen bg-gray-50">
         {renderMainContent()}
         
@@ -132,6 +131,17 @@ function App() {
           />
         )}
       </div>
+    </ProtectedRoute>
+  );
+}
+
+// Main App component that wraps everything with AuthProvider
+function App() {
+  return (
+    <ErrorBoundary>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
     </ErrorBoundary>
   );
 }

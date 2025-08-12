@@ -1,102 +1,89 @@
 import { User } from '../types';
 import { supabase } from './supabaseClient';
 
+// Using Supabase-managed sessions; no custom token model needed
+
 export class AuthService {
-  private static readonly USER_STORAGE_KEY = 'cmms_current_user';
   private static currentUser: User | null = null;
 
-  private static saveUserToStorage(user: User | null) {
-    if (user) {
-      localStorage.setItem(this.USER_STORAGE_KEY, JSON.stringify(user));
-    } else {
-      localStorage.removeItem(this.USER_STORAGE_KEY);
-    }
-  }
-
-  private static loadUserFromStorage(): User | null {
-    try {
-      const userJson = localStorage.getItem(this.USER_STORAGE_KEY);
-      if (!userJson) return null;
-      
-      const user = JSON.parse(userJson);
-      // Convert string dates back to Date objects
-      if (user.createdAt) {
-        user.createdAt = new Date(user.createdAt);
-      }
-      return user;
-    } catch (error) {
-      console.error('Failed to load user from storage:', error);
-      return null;
-    }
+  private static mapSupabaseUser(su: import('@supabase/supabase-js').User): User {
+    const meta = (su as any).user_metadata || {};
+    // Try to derive sensible defaults from metadata
+    const name = meta.full_name || meta.name || su.email?.split('@')[0] || 'User';
+    const role = (meta.role as User['role']) || 'technician';
+    const phoneNumber = meta.phone || meta.phoneNumber || undefined;
+    const profilePhoto = meta.avatar_url || meta.profilePhoto || undefined;
+    return {
+      id: su.id,
+      email: su.email || '',
+      name,
+      role,
+      phoneNumber,
+      profilePhoto,
+      createdAt: su.created_at ? new Date(su.created_at) : new Date(),
+    };
   }
 
   static async login(email: string, password: string): Promise<User> {
-    console.log('AuthService.login called with:', { email, password: '***' });
-    
-    // Simple mock login for demo purposes
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Create a mock user
-    const user: User = {
-      id: 'user_123',
-      email: email,
-      name: email.split('@')[0].replace('.', ' ').replace(/\b\w/g, l => l.toUpperCase()),
-      role: 'technician',
-      phoneNumber: '+1234567890',
-      profilePhoto: undefined,
-      createdAt: new Date(),
-    };
-    
-    console.log('AuthService created mock user:', user);
-    this.currentUser = user;
-    this.saveUserToStorage(user);
-    console.log('AuthService saved user to storage, returning:', user);
-    return user;
+    if (!email || !password) {
+      throw new Error('Email and password are required');
+    }
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error || !data.session || !data.user) {
+      throw new Error(error?.message || 'Invalid email or password');
+    }
+    const mapped = this.mapSupabaseUser(data.user);
+    this.currentUser = mapped;
+    return mapped;
   }
 
   static async logout(): Promise<void> {
-    console.log('AuthService.logout called');
+    await supabase.auth.signOut();
     this.currentUser = null;
-    this.saveUserToStorage(null);
-    console.log('User cleared from memory and storage');
   }
 
   static async getCurrentUser(): Promise<User | null> {
-    // Return cached user if available
-    if (this.currentUser) {
-      return this.currentUser;
-    }
+    // Return cached
+    if (this.currentUser) return this.currentUser;
+    const { data, error } = await supabase.auth.getUser();
+    if (error || !data.user) return null;
+    const mapped = this.mapSupabaseUser(data.user);
+    this.currentUser = mapped;
+    return mapped;
+  }
 
-    // Try to load user from storage
-    const storedUser = this.loadUserFromStorage();
-    if (storedUser) {
-      this.currentUser = storedUser;
-      console.log('Loaded user from storage:', storedUser);
-      return storedUser;
-    }
+  static async refreshToken(): Promise<boolean> {
+    // Supabase auto-refreshes tokens; attempt to read session to verify
+    const { data } = await supabase.auth.getSession();
+    return Boolean(data.session);
+  }
 
-    // No user in memory or storage
-    return null;
+  static async getAuthToken(): Promise<string | null> {
+    const { data } = await supabase.auth.getSession();
+    return data.session?.access_token || null;
   }
 
   static async updateProfile(updates: Partial<User>): Promise<User> {
-    if (!this.currentUser) {
-      throw new Error('No user logged in');
+    if (!this.currentUser) throw new Error('No user logged in');
+    const metaUpdates: Record<string, any> = {};
+    if (updates.name !== undefined) metaUpdates.name = updates.name;
+    if (updates.phoneNumber !== undefined) metaUpdates.phoneNumber = updates.phoneNumber;
+    if (updates.profilePhoto !== undefined) metaUpdates.profilePhoto = updates.profilePhoto;
+    if (updates.role !== undefined) metaUpdates.role = updates.role;
+    if (Object.keys(metaUpdates).length > 0) {
+      const { error } = await supabase.auth.updateUser({ data: metaUpdates });
+      if (error) throw error;
     }
-    
-    // Update the current user with the provided updates
-    const user: User = {
-      ...this.currentUser,
-      ...updates,
-    };
-    
-    this.currentUser = user;
-    this.saveUserToStorage(user);
-    return user;
+    // Re-fetch user
+    const { data } = await supabase.auth.getUser();
+    if (!data.user) throw new Error('Failed to fetch updated user');
+    const mapped = this.mapSupabaseUser(data.user);
+    this.currentUser = mapped;
+    return mapped;
   }
 
   static async isAuthenticated(): Promise<boolean> {
-    const user = await this.getCurrentUser();
-    return user !== null;
+    const { data } = await supabase.auth.getSession();
+    return Boolean(data.session);
   }
 }
