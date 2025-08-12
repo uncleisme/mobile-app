@@ -1,6 +1,5 @@
 import React from 'react';
-import { Bell, Menu } from 'lucide-react';
-import { useAuth } from '../../hooks/useAuth';
+import { Bell } from 'lucide-react';
 
 interface HeaderProps {
   title: string;
@@ -13,7 +12,6 @@ export const Header: React.FC<HeaderProps> = ({
   showNotifications = true,
   notificationCount = 0 
 }) => {
-  const { user } = useAuth();
 
   return (
     <header className="bg-white border-b border-gray-200 px-4 py-3 safe-area-pt">
@@ -24,9 +22,6 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
           <div>
             <h1 className="text-lg font-semibold text-gray-900">{title}</h1>
-            {user && (
-              <p className="text-sm text-gray-500">Welcome, {user.name.split(' ')[0]}</p>
-            )}
           </div>
         </div>
         
