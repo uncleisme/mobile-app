@@ -43,7 +43,7 @@ export const LeaveManagement: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      <Header title="Leave Management" showNotifications={false} />
+      <Header title="" showNotifications={false} />
       
       {!showRequestForm && (
         <>
