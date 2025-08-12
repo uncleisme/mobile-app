@@ -6,13 +6,27 @@ import { supabase } from './supabaseClient';
 export class AuthService {
   private static currentUser: User | null = null;
 
+  private static async getProfile(userId: string): Promise<{ avatar_url?: string; full_name?: string; email?: string; type?: string } | null> {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('avatar_url, full_name, email, type')
+      .eq('id', userId)
+      .maybeSingle();
+    if (error) {
+      console.warn('Failed to fetch profile row:', error.message);
+      return null;
+    }
+    return data as any;
+  }
+
   private static mapSupabaseUser(su: import('@supabase/supabase-js').User): User {
     const meta = (su as any).user_metadata || {};
     // Try to derive sensible defaults from metadata
     const name = meta.full_name || meta.name || su.email?.split('@')[0] || 'User';
     const role = (meta.role as User['role']) || 'technician';
     const phoneNumber = meta.phone || meta.phoneNumber || undefined;
-    const profilePhoto = meta.avatar_url || meta.profilePhoto || undefined;
+    // Profile photo will be populated from profiles.avatar_url when available
+    const profilePhoto = meta.profilePhoto || undefined;
     return {
       id: su.id,
       email: su.email || '',
@@ -32,7 +46,18 @@ export class AuthService {
     if (error || !data.session || !data.user) {
       throw new Error(error?.message || 'Invalid email or password');
     }
-    const mapped = this.mapSupabaseUser(data.user);
+    let mapped = this.mapSupabaseUser(data.user);
+    // Merge profile row values (avatar_url, full_name, phone)
+    const profile = await this.getProfile(mapped.id);
+    if (profile) {
+      mapped = {
+        ...mapped,
+        name: profile.full_name || mapped.name,
+        // email remains from auth.user; profile.email is informational
+        role: (profile.type as User['role']) || mapped.role,
+        profilePhoto: profile.avatar_url || mapped.profilePhoto,
+      };
+    }
     this.currentUser = mapped;
     return mapped;
   }
@@ -47,7 +72,15 @@ export class AuthService {
     if (this.currentUser) return this.currentUser;
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) return null;
-    const mapped = this.mapSupabaseUser(data.user);
+    let mapped = this.mapSupabaseUser(data.user);
+    const profile = await this.getProfile(mapped.id);
+    if (profile) {
+      mapped = {
+        ...mapped,
+        name: profile.full_name || mapped.name,
+        profilePhoto: profile.avatar_url || mapped.profilePhoto,
+      };
+    }
     this.currentUser = mapped;
     return mapped;
   }
@@ -74,10 +107,32 @@ export class AuthService {
       const { error } = await supabase.auth.updateUser({ data: metaUpdates });
       if (error) throw error;
     }
+
+    // Persist avatar and other profile attributes into public profiles table
+    const profileUpdates: Record<string, any> = {};
+    if (updates.profilePhoto !== undefined) profileUpdates.avatar_url = updates.profilePhoto;
+    if (updates.name !== undefined) profileUpdates.full_name = updates.name;
+    if (updates.role !== undefined) profileUpdates.type = updates.role;
+    if (Object.keys(profileUpdates).length > 0) {
+      const { error: pErr } = await supabase
+        .from('profiles')
+        .update(profileUpdates)
+        .eq('id', this.currentUser.id);
+      if (pErr) throw pErr;
+    }
+
     // Re-fetch user
     const { data } = await supabase.auth.getUser();
     if (!data.user) throw new Error('Failed to fetch updated user');
-    const mapped = this.mapSupabaseUser(data.user);
+    let mapped = this.mapSupabaseUser(data.user);
+    const profile = await this.getProfile(mapped.id);
+    if (profile) {
+      mapped = {
+        ...mapped,
+        name: profile.full_name || mapped.name,
+        profilePhoto: profile.avatar_url || mapped.profilePhoto,
+      };
+    }
     this.currentUser = mapped;
     return mapped;
   }

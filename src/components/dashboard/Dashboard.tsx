@@ -102,9 +102,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick }) => {
         <div className="bg-white rounded-xl shadow-sm p-6">
           <div className="flex items-center gap-4">
             {/* Avatar */}
-            <div className="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center">
-              <User className="w-7 h-7 text-blue-600" />
-            </div>
+            {user?.profilePhoto ? (
+              <img
+                src={user.profilePhoto}
+                alt={user.name || 'User avatar'}
+                className="w-14 h-14 rounded-full object-cover"
+              />
+            ) : (
+              <div className="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center">
+                <User className="w-7 h-7 text-blue-600" />
+              </div>
+            )}
             {/* Greeting and date */}
             <div className="flex flex-col">
               <h2 className="text-lg font-semibold text-gray-900">
