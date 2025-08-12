@@ -179,6 +179,13 @@ export const WorkOrdersList: React.FC<WorkOrdersListProps> = ({ onWorkOrderClick
                 <div className="flex justify-between items-start">
                   <div>
                     <h3 className="font-semibold text-gray-900">{wo.title || 'Untitled Work Order'}</h3>
+                    {wo.work_type ? (
+                      <div className="mt-1">
+                        <span className="inline-block px-2 py-0.5 text-xs rounded-full bg-purple-100 text-purple-700">
+                          {wo.work_type}
+                        </span>
+                      </div>
+                    ) : null}
                     <p className="text-sm text-gray-500 line-clamp-2">{wo.description || 'No description'}</p>
                   </div>
                   {statusBadge(wo)}

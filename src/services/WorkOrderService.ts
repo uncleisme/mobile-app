@@ -14,6 +14,7 @@ export class WorkOrderService {
     description,
     due_date,
     location_id,
+    work_type,
     status,
     priority,
     assigned_to,
@@ -43,7 +44,7 @@ export class WorkOrderService {
     return {
       id: String(row.id),
       work_order_id: String(row.work_order_id),
-      work_type: '', // not needed in UI now
+      work_type: String(row.work_type || ''),
       asset_id: String(row.asset_id),
       location_id: String(row.location_id),
       status,

@@ -129,6 +129,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick }) => {
                   <p className="font-medium text-gray-900">
                     {formatTime(nextJob.due_date)} – {nextJob.title || 'Untitled Work Order'}
                   </p>
+                  {nextJob.work_type ? (
+                    <div className="mt-1">
+                      <span className="inline-block px-2 py-0.5 text-xs rounded-full bg-purple-100 text-purple-700">
+                        {nextJob.work_type}
+                      </span>
+                    </div>
+                  ) : null}
                   <div className="flex items-center space-x-1 mt-1">
                     <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
                     <p className="text-sm text-gray-600">
@@ -172,6 +179,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick }) => {
                         <p className="font-medium text-gray-900">
                           {workOrder.title || 'Untitled Work Order'}
                         </p>
+                        {workOrder.work_type ? (
+                          <div className="mt-1">
+                            <span className="inline-block px-2 py-0.5 text-xs rounded-full bg-purple-100 text-purple-700">
+                              {workOrder.work_type}
+                            </span>
+                          </div>
+                        ) : null}
                         <div className="flex items-center text-sm text-gray-500 mt-1">
                           <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
                           <span className="truncate">
