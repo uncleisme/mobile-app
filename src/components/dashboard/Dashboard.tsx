@@ -95,27 +95,31 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick }) => {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      <Header title="Dashboard" notificationCount={todaysWorkOrders.length} />
+      <Header title="" notificationCount={todaysWorkOrders.length} />
       
       <div className="px-4 py-6 max-w-md mx-auto space-y-6">
         {/* Personal Greeting */}
         <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="flex items-center space-x-3 mb-2">
-            <div className="bg-blue-100 p-2 rounded-full">
-              <User className="w-5 h-5 text-blue-600" />
+          <div className="flex items-center gap-4">
+            {/* Avatar */}
+            <div className="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center">
+              <User className="w-7 h-7 text-blue-600" />
             </div>
-            <h2 className="text-lg font-semibold text-gray-900">
-              Good {getTimeOfDay()}, {user?.name?.split(' ')[0] || 'Technician'}
-            </h2>
+            {/* Greeting and date */}
+            <div className="flex flex-col">
+              <h2 className="text-lg font-semibold text-gray-900">
+                Good {getTimeOfDay()}, {user?.name?.split(' ')[0] || 'Technician'}
+              </h2>
+              <p className="text-sm text-gray-500">
+                {new Date().toLocaleDateString('en-US', { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}
+              </p>
+            </div>
           </div>
-          <p className="text-sm text-gray-500">
-            {new Date().toLocaleDateString('en-US', { 
-              weekday: 'long', 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
-            })}
-          </p>
         </div>
 
         {/* Next Job - Simplified single version */}
