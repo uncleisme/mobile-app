@@ -4,7 +4,7 @@ import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { Calendar, TrendingUp } from 'lucide-react';
 import { LeaveBalance as LeaveBalanceType } from '../../types';
 import { LeaveService } from '../../services/LeaveService';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../contexts/AuthContext';
 
 export const LeaveBalance: React.FC = () => {
   const [balance, setBalance] = useState<LeaveBalanceType | null>(null);

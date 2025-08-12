@@ -6,7 +6,7 @@ import { Select } from '../ui/Select';
 import { Textarea } from '../ui/Textarea';
 import { Card } from '../ui/Card';
 import { LeaveService } from '../../services/LeaveService';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface LeaveRequestFormProps {
   onBack: () => void;

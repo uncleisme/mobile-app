@@ -5,7 +5,7 @@ import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { Calendar, Clock } from 'lucide-react';
 import { LeaveRequest } from '../../types';
 import { LeaveService } from '../../services/LeaveService';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../contexts/AuthContext';
 
 export const LeaveRequestsList: React.FC = () => {
   const [requests, setRequests] = useState<LeaveRequest[]>([]);

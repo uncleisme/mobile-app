@@ -9,6 +9,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<User>;
   logout: () => Promise<void>;
   refreshAuth: () => Promise<void>;
+  updateProfile: (updates: Partial<User>) => Promise<User>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -87,6 +88,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     await initializeAuth();
   };
 
+  const updateProfile = async (updates: Partial<User>): Promise<User> => {
+    const updated = await AuthService.updateProfile(updates);
+    setUser(updated);
+    return updated;
+  };
+
   const value: AuthContextType = {
     user,
     loading,
@@ -94,6 +101,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     logout,
     refreshAuth,
+    updateProfile,
   };
 
   return (
