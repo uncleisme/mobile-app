@@ -4,6 +4,7 @@ import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { Dashboard } from './components/dashboard/Dashboard';
 import { WorkOrderDetail } from './components/workorders/WorkOrderDetail';
 import { CompleteWorkOrderForm } from './components/workorders/CompleteWorkOrderForm';
+import { WorkOrdersList } from './components/workorders/WorkOrdersList';
 import { ProfileSettings } from './components/profile/ProfileSettings';
 import { LeaveManagement } from './components/leave/LeaveManagement';
 import { BottomNavigation } from './components/layout/BottomNavigation';
@@ -58,6 +59,11 @@ function AppContent() {
   };
 
   const renderMainContent = () => {
+    // Distinct Work Orders list page
+    if (activeTab === 'work-orders' && workOrderView === 'list') {
+      return <WorkOrdersList onWorkOrderClick={handleWorkOrderClick} />;
+    }
+
     if (activeTab === 'work-orders' || (activeTab === 'dashboard' && workOrderView !== 'list')) {
       switch (workOrderView) {
         case 'detail':

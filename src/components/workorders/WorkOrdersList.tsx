@@ -1,0 +1,181 @@
+import { useEffect, useMemo, useState } from 'react';
+import { WorkOrder } from '../../types';
+import { WorkOrderService } from '../../services/WorkOrderService';
+import { useAuth } from '../../contexts/AuthContext';
+import { Search, Filter, Clock, MapPin, AlertTriangle, CheckCircle2, PlayCircle, Circle } from 'lucide-react';
+
+interface WorkOrdersListProps {
+  onWorkOrderClick: (workOrderId: string) => void;
+}
+
+const STATUS_OPTIONS = [
+  { id: 'all', label: 'All', icon: Circle },
+  { id: 'pending', label: 'Pending', icon: Clock },
+  { id: 'in_progress', label: 'In Progress', icon: PlayCircle },
+  { id: 'completed', label: 'Completed', icon: CheckCircle2 },
+  { id: 'overdue', label: 'Overdue', icon: AlertTriangle },
+] as const;
+
+export const WorkOrdersList: React.FC<WorkOrdersListProps> = ({ onWorkOrderClick }) => {
+  const { user } = useAuth();
+  const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState('');
+  const [status, setStatus] = useState<(typeof STATUS_OPTIONS)[number]['id']>('all');
+  const [sort, setSort] = useState<'due_asc' | 'due_desc'>('due_asc');
+
+  useEffect(() => {
+    const load = async () => {
+      if (!user?.id) { setLoading(false); return; }
+      try {
+        setLoading(true);
+        const orders = await WorkOrderService.getWorkOrdersForTechnician(user.id);
+        setWorkOrders(Array.isArray(orders) ? orders : []);
+      } catch (e) {
+        console.error('Failed to load work orders:', e);
+        setWorkOrders([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [user?.id]);
+
+  const filtered = useMemo(() => {
+    let result = [...workOrders];
+    // Text search
+    if (query.trim()) {
+      const q = query.toLowerCase();
+      result = result.filter(w =>
+        (w.title || '').toLowerCase().includes(q) ||
+        (w.description || '').toLowerCase().includes(q) ||
+        (w.location_id || '').toLowerCase().includes(q)
+      );
+    }
+    // Status filter (using loose matching to your text statuses)
+    if (status !== 'all') {
+      result = result.filter(w => {
+        const s = (w.status || '').toLowerCase();
+        if (status === 'pending') return ['pending','new','open','assigned'].includes(s);
+        if (status === 'in_progress') return ['in progress','in_progress','started','working'].includes(s);
+        if (status === 'completed') return ['completed','done','closed'].includes(s);
+        if (status === 'overdue') {
+          const due = new Date(w.due_date);
+          const today = new Date(); today.setHours(0,0,0,0);
+          return due < today && !['completed','done','closed'].includes(s);
+        }
+        return true;
+      });
+    }
+    // Sort
+    result.sort((a,b) => {
+      const da = new Date(a.due_date).getTime();
+      const db = new Date(b.due_date).getTime();
+      return sort === 'due_asc' ? da - db : db - da;
+    });
+    return result;
+  }, [workOrders, query, status, sort]);
+
+  const formatDate = (d?: string | Date) => {
+    if (!d) return '';
+    try { return new Date(d).toLocaleString(); } catch { return ''; }
+  };
+
+  const statusBadge = (wo: WorkOrder) => {
+    const s = (wo.status || '').toLowerCase();
+    if (['completed','done','closed'].includes(s)) return (
+      <span className="px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-700">Completed</span>
+    );
+    const due = new Date(wo.due_date);
+    const today = new Date(); today.setHours(0,0,0,0);
+    if (due < today) return (
+      <span className="px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-700">Overdue</span>
+    );
+    if (['in progress','in_progress','started','working'].includes(s)) return (
+      <span className="px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700">In Progress</span>
+    );
+    return <span className="px-2 py-0.5 text-xs rounded-full bg-amber-100 text-amber-700">Pending</span>;
+  };
+
+  return (
+    <div className="min-h-screen bg-white pb-20">
+      {/* Header area distinct from Dashboard */}
+      <div className="bg-gradient-to-r from-indigo-600 to-blue-600 text-white p-6 rounded-b-2xl shadow">
+        <h1 className="text-xl font-semibold">Work Orders</h1>
+        <p className="text-sm text-indigo-100 mt-1">Search, filter and manage all your jobs</p>
+
+        <div className="mt-4 flex items-center gap-2">
+          <div className="flex items-center bg-white/10 rounded-lg px-3 py-2 flex-1">
+            <Search size={18} className="opacity-90 mr-2" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search by title, description or location"
+              className="bg-transparent outline-none placeholder-indigo-100/70 text-white w-full"
+            />
+          </div>
+          <div className="bg-white/10 rounded-lg px-3 py-2 flex items-center">
+            <Filter size={18} className="opacity-90 mr-2" />
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value as any)}
+              className="bg-transparent outline-none text-white"
+            >
+              <option value="due_asc" className="text-gray-900">Due Date ↑</option>
+              <option value="due_desc" className="text-gray-900">Due Date ↓</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Status pills */}
+        <div className="mt-4 flex gap-2 overflow-x-auto no-scrollbar">
+          {STATUS_OPTIONS.map(opt => {
+            const Icon = opt.icon;
+            const active = status === opt.id;
+            return (
+              <button
+                key={opt.id}
+                onClick={() => setStatus(opt.id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm whitespace-nowrap transition-colors ${active ? 'bg-white text-indigo-600' : 'bg-white/10 text-white hover:bg-white/20'}`}
+              >
+                <Icon size={16} /> {opt.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* List */}
+      <div className="px-4 py-4 max-w-md mx-auto">
+        {loading ? (
+          <div className="text-center text-gray-500 py-12">Loading work orders…</div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center text-gray-500 py-12">No work orders found</div>
+        ) : (
+          <div className="space-y-3">
+            {filtered.map(wo => (
+              <div
+                key={wo.id}
+                className="bg-white rounded-xl border shadow-sm p-4 hover:shadow-md transition cursor-pointer"
+                onClick={() => wo.id && onWorkOrderClick(wo.id)}
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-semibold text-gray-900">{wo.title || 'Untitled Work Order'}</h3>
+                    <p className="text-sm text-gray-500 line-clamp-2">{wo.description || 'No description'}</p>
+                  </div>
+                  {statusBadge(wo)}
+                </div>
+
+                <div className="mt-3 flex items-center gap-4 text-sm text-gray-600">
+                  <div className="flex items-center gap-1"><Clock size={16} className="text-gray-400" /> {formatDate(wo.due_date)}</div>
+                  <div className="flex items-center gap-1"><MapPin size={16} className="text-gray-400" /> {wo.location_id || 'N/A'}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};

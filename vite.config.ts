@@ -7,15 +7,18 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      devOptions: { enabled: true },
       includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'robots.txt'],
       manifest: {
-        name: 'My React PWA',
-        short_name: 'MyApp',
-        description: 'A Vite-powered PWA app',
-        theme_color: '#000000',
+        name: 'CMMS Technician Web App',
+        short_name: 'CMMS',
+        description: 'Mobile CMMS for technicians with Supabase auth',
+        theme_color: '#2563eb',
         background_color: '#ffffff',
         display: 'standalone',
+        orientation: 'portrait',
         start_url: '/',
+        scope: '/',
         icons: [
           {
             src: 'pwa-192x192.png',
@@ -33,6 +36,10 @@ export default defineConfig({
             type: 'image/png',
             purpose: 'any maskable',
           }
+        ],
+        shortcuts: [
+          { name: 'Dashboard', url: '/' },
+          { name: 'Work Orders', url: '/#work-orders' }
         ]
       }
     })
