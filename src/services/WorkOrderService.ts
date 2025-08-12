@@ -1,22 +1,102 @@
 import { WorkOrder, Asset, MaintenanceLog } from '../types';
 import { mockWorkOrders, mockAssets, mockMaintenanceLogs } from './mockData';
+import { supabase } from './supabaseClient';
 
 export class WorkOrderService {
   private static workOrders = [...mockWorkOrders];
   private static maintenanceLogs = [...mockMaintenanceLogs];
 
-  // Mock methods (working version) - NO DATABASE CALLS
+  // Minimal column set used by the app UI (list + detail header)
+  private static readonly baseSelect = `
+    id,
+    work_order_id,
+    title,
+    description,
+    due_date,
+    location_id,
+    status,
+    priority,
+    assigned_to,
+    asset_id,
+    created_at
+  `;
+
+  private static mapRowToWorkOrder(row: any): WorkOrder {
+    // Normalize to app tokens where possible
+    const statusRaw = String(row.status || '').toLowerCase();
+    const status =
+      statusRaw.includes('complete') ? 'completed' :
+      statusRaw.includes('progress') ? 'in_progress' :
+      statusRaw.includes('cancel') ? 'cancelled' :
+      'pending';
+
+    const priorityRaw = String(row.priority || '').toLowerCase();
+    const priority =
+      priorityRaw.includes('crit') ? 'critical' :
+      priorityRaw.includes('high') ? 'high' :
+      priorityRaw.includes('low') ? 'low' :
+      'medium';
+
+    const due = row.due_date ? new Date(row.due_date) : undefined;
+    const createdAt = row.created_at ? new Date(row.created_at) : undefined;
+
+    return {
+      id: String(row.id),
+      work_order_id: String(row.work_order_id),
+      work_type: '', // not needed in UI now
+      asset_id: String(row.asset_id),
+      location_id: String(row.location_id),
+      status,
+      priority,
+      title: String(row.title),
+      description: String(row.description || ''),
+      created_date: createdAt ?? new Date(),
+      due_date: due ?? new Date(),
+      requested_by: '',
+      assigned_to: row.assigned_to ? String(row.assigned_to) : undefined,
+      // Back-compat fields used by components
+      scheduledDate: due,
+      createdAt,
+      assetId: row.asset_id ? String(row.asset_id) : undefined,
+      assignedTo: row.assigned_to ? String(row.assigned_to) : undefined,
+    } as WorkOrder;
+  }
+
+  // Fetch minimal fields from Supabase matching UI needs, fallback to mocks
   static async getWorkOrdersForTechnician(technicianId: string): Promise<WorkOrder[]> {
-    await new Promise(resolve => setTimeout(resolve, 500)); // Faster for demo
-    console.log('WorkOrderService: Returning mock work orders for technician:', technicianId);
-    console.log('Available work orders:', this.workOrders);
-    // Return all work orders for demo purposes since we're using mock data
-    return this.workOrders;
+    try {
+      const { data, error } = await supabase
+        .from('work_orders')
+        .select(this.baseSelect)
+        .eq('assigned_to', technicianId)
+        .order('due_date', { ascending: true });
+
+      if (error) throw error;
+      const rows = Array.isArray(data) ? data : [];
+      return rows.map(this.mapRowToWorkOrder);
+    } catch (err) {
+      console.warn('Supabase fetch failed, falling back to mock work orders:', err);
+      await new Promise(resolve => setTimeout(resolve, 300));
+      return this.workOrders;
+    }
   }
 
   static async getWorkOrderById(id: string): Promise<WorkOrder | null> {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    return this.workOrders.find(wo => wo.id === id) || null;
+    try {
+      const { data, error } = await supabase
+        .from('work_orders')
+        .select(this.baseSelect)
+        .eq('id', id)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) return null;
+      return this.mapRowToWorkOrder(data);
+    } catch (err) {
+      console.warn('Supabase fetch by id failed, falling back to mock:', err);
+      await new Promise(resolve => setTimeout(resolve, 300));
+      return this.workOrders.find(wo => wo.id === id) || null;
+    }
   }
 
   static async getAssetById(id: string): Promise<Asset | null> {
