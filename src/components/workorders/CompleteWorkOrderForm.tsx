@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Camera, Upload } from 'lucide-react';
+import { ArrowLeft, Camera } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Textarea } from '../ui/Textarea';
 import { Input } from '../ui/Input';
@@ -28,11 +28,9 @@ export const CompleteWorkOrderForm: React.FC<CompleteWorkOrderFormProps> = ({
   const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files) {
-      // Mock photo upload - in real app, would upload to storage service
-      const mockPhotoUrls = Array.from(files).map((file, index) => 
-        `https://images.pexels.com/photos/162553/keys-workshop-mechanic-tools-162553.jpeg?auto=compress&cs=tinysrgb&w=400&t=${Date.now()}_${index}`
-      );
-      setPhotos(prev => [...prev, ...mockPhotoUrls]);
+      // Create local object URLs for preview only. Replace with real storage upload later.
+      const objectUrls = Array.from(files).map((file) => URL.createObjectURL(file));
+      setPhotos(prev => [...prev, ...objectUrls]);
     }
   };
 

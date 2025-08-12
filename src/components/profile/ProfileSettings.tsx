@@ -18,9 +18,8 @@ export const ProfileSettings: React.FC = () => {
   const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      // Mock photo upload - in real app, would upload to storage service
-      const mockPhotoUrl = `https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop&t=${Date.now()}`;
-      updateProfile({ profilePhoto: mockPhotoUrl });
+      // Photo upload not implemented yet – integrate Supabase Storage or similar.
+      console.warn('Profile photo upload not implemented. Skipping mock URL assignment.');
     }
   };
 
