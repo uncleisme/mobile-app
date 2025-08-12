@@ -32,9 +32,13 @@ export const useAuth = () => {
       const user = await AuthService.login(email, password);
       console.log('AuthService returned user:', user);
       
-      // Single state update
+      // Update state and force re-render
       setUser(user);
       console.log('User state updated in useAuth, new user:', user);
+      
+      // Force a small delay to ensure state propagation
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
       return user;
     } catch (error) {
       console.error('Login failed:', error);

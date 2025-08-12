@@ -28,13 +28,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
       const user = await login(email, password);
       console.log('Login successful, user:', user);
       
-      // Small delay to ensure state updates propagate
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Call the success callback if provided
-      if (onLoginSuccess) {
-        onLoginSuccess();
-      }
+      // Call success callback immediately after login
+      onLoginSuccess?.();
     } catch (err) {
       console.error('Login failed:', err);
       setError(err instanceof Error ? err.message : 'Login failed');

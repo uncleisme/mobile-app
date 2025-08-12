@@ -68,10 +68,7 @@ function App() {
         <div className="w-full max-w-md">
           <div className="bg-white rounded-2xl shadow-lg p-8">
             <h1 className="text-2xl font-bold text-center text-gray-800 mb-8">CMMS Login</h1>
-            <LoginForm onLoginSuccess={() => {
-              // The useAuth hook will update the user state, causing a re-render
-              console.log('Login successful, redirecting to dashboard...');
-            }} />
+            <LoginForm />
           </div>
         </div>
       </div>
