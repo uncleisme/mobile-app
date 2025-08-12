@@ -95,7 +95,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick }) => {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      <Header title="" notificationCount={todaysWorkOrders.length} />
+      <Header title="Dashboard" notificationCount={todaysWorkOrders.length} />
       
       <div className="px-4 py-6 max-w-md mx-auto space-y-6">
         {/* Personal Greeting */}
