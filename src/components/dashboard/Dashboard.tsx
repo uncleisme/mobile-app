@@ -5,7 +5,7 @@ import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { WorkOrder } from '../../types';
 import { WorkOrderService } from '../../services/WorkOrderService';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../contexts/AuthContext';
 import { MapPin, Clock, Calendar, User, AlertCircle } from 'lucide-react';
 
 interface DashboardProps {
@@ -16,6 +16,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick }) => {
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const [locationNames, setLocationNames] = useState<Record<string, string>>({});
 
   // Helper function to get time of day for greeting
   const getTimeOfDay = () => {
@@ -63,6 +64,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick }) => {
 
     loadWorkOrders();
   }, [user]);
+
+  // Resolve location names for any loaded work orders
+  useEffect(() => {
+    const fetchLocations = async () => {
+      try {
+        const ids = workOrders.map(w => w.location_id).filter(Boolean) as string[];
+        if (ids.length === 0) { setLocationNames({}); return; }
+        const map = await WorkOrderService.getLocationNamesByIds(ids);
+        setLocationNames(map);
+      } catch (err) {
+        console.warn('Dashboard: failed to fetch location names', err);
+        setLocationNames({});
+      }
+    };
+    fetchLocations();
+  }, [workOrders]);
 
   // Get today's work orders and next job
   const todaysWorkOrders = WorkOrderService.getTodaysWorkOrders(workOrders);
@@ -115,7 +132,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick }) => {
                   <div className="flex items-center space-x-1 mt-1">
                     <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
                     <p className="text-sm text-gray-600">
-                      {nextJob.location_id || 'Location not specified'}
+                      {locationNames[nextJob.location_id] || nextJob.location_id || 'Location not specified'}
                     </p>
                   </div>
                 </div>
@@ -158,7 +175,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick }) => {
                         <div className="flex items-center text-sm text-gray-500 mt-1">
                           <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
                           <span className="truncate">
-                            {workOrder.location_id || 'Location not specified'}
+                            {locationNames[workOrder.location_id] || workOrder.location_id || 'Location not specified'}
                           </span>
                         </div>
                       </div>

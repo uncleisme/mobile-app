@@ -176,4 +176,37 @@ export class WorkOrderService {
       return scheduledDate < today;
     });
   }
+
+  /**
+   * Fetch a mapping of location_id -> location name from Supabase 'locations' table.
+   * Falls back to echoing the ID if fetch fails or name is missing.
+   */
+  static async getLocationNamesByIds(ids: string[]): Promise<Record<string, string>> {
+    const unique = Array.from(new Set(ids.filter(Boolean)));
+    if (unique.length === 0) return {};
+    try {
+      const { data, error } = await supabase
+        .from('locations')
+        .select('id, name, block, floor, room')
+        .in('id', unique);
+      if (error) throw error;
+      const map: Record<string, string> = {};
+      (data || []).forEach((row: any) => {
+        const id = String(row.id);
+        const name = String(row.name || row.location_name || '');
+        const block = row.block ? `Blk ${String(row.block)}` : '';
+        const floor = row.floor ? `Floor ${String(row.floor)}` : '';
+        const room = row.room ? `Room ${String(row.room)}` : '';
+        // Keep name without label, other parts with labels; join with " | "
+        const parts = [name, block, floor, room].filter(Boolean);
+        map[id] = parts.length ? parts.join(' | ') : id;
+      });
+      // Ensure any missing ids are present as their own value
+      unique.forEach(id => { if (!map[id]) map[id] = id; });
+      return map;
+    } catch (err) {
+      console.warn('Failed to fetch locations, returning ID map:', err);
+      return unique.reduce((acc, id) => { acc[id] = id; return acc; }, {} as Record<string, string>);
+    }
+  }
 }

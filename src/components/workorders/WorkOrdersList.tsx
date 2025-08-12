@@ -23,6 +23,7 @@ export const WorkOrdersList: React.FC<WorkOrdersListProps> = ({ onWorkOrderClick
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState<(typeof STATUS_OPTIONS)[number]['id']>('all');
   const [sort, setSort] = useState<'due_asc' | 'due_desc'>('due_asc');
+  const [locationNames, setLocationNames] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const load = async () => {
@@ -40,6 +41,22 @@ export const WorkOrdersList: React.FC<WorkOrdersListProps> = ({ onWorkOrderClick
     };
     load();
   }, [user?.id]);
+
+  // Fetch location names based on location_id present in the loaded work orders
+  useEffect(() => {
+    const fetchLocations = async () => {
+      try {
+        const ids = workOrders.map(w => w.location_id).filter(Boolean) as string[];
+        if (ids.length === 0) { setLocationNames({}); return; }
+        const map = await WorkOrderService.getLocationNamesByIds(ids);
+        setLocationNames(map);
+      } catch (err) {
+        console.warn('Failed to resolve location names:', err);
+        setLocationNames({});
+      }
+    };
+    fetchLocations();
+  }, [workOrders]);
 
   const filtered = useMemo(() => {
     let result = [...workOrders];
@@ -169,7 +186,7 @@ export const WorkOrdersList: React.FC<WorkOrdersListProps> = ({ onWorkOrderClick
 
                 <div className="mt-3 flex items-center gap-4 text-sm text-gray-600">
                   <div className="flex items-center gap-1"><Clock size={16} className="text-gray-400" /> {formatDate(wo.due_date)}</div>
-                  <div className="flex items-center gap-1"><MapPin size={16} className="text-gray-400" /> {wo.location_id || 'N/A'}</div>
+                  <div className="flex items-center gap-1"><MapPin size={16} className="text-gray-400" /> {locationNames[wo.location_id] || wo.location_id || 'N/A'}</div>
                 </div>
               </div>
             ))}
