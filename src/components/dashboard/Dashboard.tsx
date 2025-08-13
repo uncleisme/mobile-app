@@ -6,7 +6,8 @@ import { Card } from '../ui/Card';
 import { WorkOrder } from '../../types';
 import { WorkOrderService } from '../../services/WorkOrderService';
 import { useAuth } from '../../contexts/AuthContext';
-import { MapPin, Clock, Calendar, AlertCircle } from 'lucide-react';
+import { MapPin, Clock } from 'lucide-react';
+import { Activity } from '../activity/Activity';
 
 interface DashboardProps {
   onWorkOrderClick: (workOrderId: string) => void;
@@ -189,46 +190,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick }) => {
           )}
         </Card>
 
-        {/* Leave Summary */}
-        <Card>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-medium text-gray-900">Leave Summary</h3>
-            <span className="text-sm text-blue-600">View All</span>
-          </div>
-          <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-blue-600">8</p>
-              <p className="text-sm text-gray-500">Days Left</p>
-            </div>
-            <div className="h-12 w-px bg-gray-200"></div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-blue-600">1</p>
-              <p className="text-sm text-gray-500">Pending</p>
-            </div>
-          </div>
-        </Card>
-
-        {/* Quick Actions */}
-        <div className="grid grid-cols-2 gap-4">
-          <button 
-            className="flex flex-col items-center justify-center p-4 bg-white rounded-xl shadow-sm hover:bg-gray-50 transition-colors"
-            onClick={() => onWorkOrderClick('all')}
-          >
-            <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mb-2">
-              <Calendar className="w-5 h-5 text-green-600" />
-            </div>
-            <span className="text-sm font-medium">All Jobs</span>
-          </button>
-          <button 
-            className="flex flex-col items-center justify-center p-4 bg-white rounded-xl shadow-sm hover:bg-gray-50 transition-colors"
-            onClick={() => onWorkOrderClick('emergency')}
-          >
-            <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center mb-2">
-              <AlertCircle className="w-5 h-5 text-red-600" />
-            </div>
-            <span className="text-sm font-medium">Emergency</span>
-          </button>
-        </div>
+        {/* Activity (latest notifications) */}
+        <Activity />
       </div>
     </div>
   );
