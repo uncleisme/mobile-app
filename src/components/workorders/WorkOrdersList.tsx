@@ -3,7 +3,7 @@ import { WorkOrder } from '../../types';
 import { WorkOrderService } from '../../services/WorkOrderService';
 import { useAuth } from '../../contexts/AuthContext';
 import { Header } from '../layout/Header';
-import { Search, Filter, Clock, MapPin, AlertTriangle, CheckCircle2, PlayCircle, Circle } from 'lucide-react';
+import { Search, Filter, Clock, MapPin, AlertTriangle, CheckCircle2, PlayCircle, Circle, Eye } from 'lucide-react';
 
 interface WorkOrdersListProps {
   onWorkOrderClick: (workOrderId: string) => void;
@@ -13,6 +13,7 @@ const STATUS_OPTIONS = [
   { id: 'all', label: 'All', icon: Circle },
   { id: 'pending', label: 'Pending', icon: Clock },
   { id: 'in_progress', label: 'In Progress', icon: PlayCircle },
+  { id: 'review', label: 'Review', icon: Eye },
   { id: 'completed', label: 'Completed', icon: CheckCircle2 },
   { id: 'overdue', label: 'Overdue', icon: AlertTriangle },
 ] as const;
@@ -76,6 +77,7 @@ export const WorkOrdersList: React.FC<WorkOrdersListProps> = ({ onWorkOrderClick
         const s = (w.status || '').toLowerCase();
         if (status === 'pending') return ['pending','new','open','assigned'].includes(s);
         if (status === 'in_progress') return ['in progress','in_progress','started','working'].includes(s);
+        if (status === 'review') return ['review','in review','in_review','awaiting review','awaiting_review'].includes(s);
         if (status === 'completed') return ['completed','done','closed'].includes(s);
         if (status === 'overdue') {
           const due = new Date(w.due_date);
@@ -101,16 +103,21 @@ export const WorkOrdersList: React.FC<WorkOrdersListProps> = ({ onWorkOrderClick
 
   const statusBadge = (wo: WorkOrder) => {
     const s = (wo.status || '').toLowerCase();
+    // Explicit statuses take precedence over overdue
     if (['completed','done','closed'].includes(s)) return (
       <span className="px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-700">Completed</span>
     );
+    if (['review','in review','in_review','awaiting review','awaiting_review'].includes(s)) return (
+      <span className="px-2 py-0.5 text-xs rounded-full bg-violet-100 text-violet-700">Review</span>
+    );
+    if (['in progress','in_progress','started','working'].includes(s)) return (
+      <span className="px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700">In Progress</span>
+    );
+    // Overdue if no explicit status above
     const due = new Date(wo.due_date);
     const today = new Date(); today.setHours(0,0,0,0);
     if (due < today) return (
       <span className="px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-700">Overdue</span>
-    );
-    if (['in progress','in_progress','started','working'].includes(s)) return (
-      <span className="px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700">In Progress</span>
     );
     return <span className="px-2 py-0.5 text-xs rounded-full bg-amber-100 text-amber-700">Pending</span>;
   };

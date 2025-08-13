@@ -27,6 +27,7 @@ export class WorkOrderService {
       statusRaw.includes('complete') ? 'completed' :
       statusRaw.includes('progress') ? 'in_progress' :
       statusRaw.includes('cancel') ? 'cancelled' :
+      statusRaw.includes('review') ? 'review' :
       'pending';
 
     const priorityRaw = String(row.priority || '').toLowerCase();
