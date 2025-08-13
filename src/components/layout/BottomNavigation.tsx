@@ -19,28 +19,30 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-2 safe-area-pb">
-      <NavBarContainer justify="between">
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          
-          return (
-            <button
-              key={tab.id}
-              onClick={() => onTabChange(tab.id)}
-              className={`flex-1 flex flex-col items-center py-2 px-3 rounded-lg transition-colors duration-200 ${
-                isActive 
-                  ? 'text-blue-600 bg-blue-50' 
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <Icon size={20} className="mb-1" />
-              <span className="text-xs font-medium">{tab.label}</span>
-            </button>
-          );
-        })}
-      </NavBarContainer>
+    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 safe-area-pb">
+      <div className="h-14">
+        <NavBarContainer justify="between" className="h-full gap-2">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            
+            return (
+              <button
+                key={tab.id}
+                onClick={() => onTabChange(tab.id)}
+                className={`flex-1 h-full flex flex-col items-center justify-center px-3 rounded-lg transition-colors duration-200 ${
+                  isActive 
+                    ? 'text-blue-600 bg-blue-50' 
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <Icon size={20} className="mb-1" />
+                <span className="text-xs font-medium">{tab.label}</span>
+              </button>
+            );
+          })}
+        </NavBarContainer>
+      </div>
     </div>
   );
 };
