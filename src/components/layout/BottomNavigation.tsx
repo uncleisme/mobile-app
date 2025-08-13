@@ -1,5 +1,6 @@
 import React from 'react';
-import { Home, ClipboardList, Calendar, User, Settings } from 'lucide-react';
+import { Home, ClipboardList, Calendar, User } from 'lucide-react';
+import { NavBarContainer } from './NavBarContainer';
 
 interface BottomNavigationProps {
   activeTab: string;
@@ -19,7 +20,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-2 safe-area-pb">
-      <div className="flex justify-around items-center max-w-md mx-auto">
+      <NavBarContainer justify="between">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -28,7 +29,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
             <button
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
-              className={`flex flex-col items-center py-2 px-3 rounded-lg transition-colors duration-200 ${
+              className={`flex-1 flex flex-col items-center py-2 px-3 rounded-lg transition-colors duration-200 ${
                 isActive 
                   ? 'text-blue-600 bg-blue-50' 
                   : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
@@ -39,7 +40,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
             </button>
           );
         })}
-      </div>
+      </NavBarContainer>
     </div>
   );
 };

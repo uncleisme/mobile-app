@@ -1,5 +1,6 @@
 import React from 'react';
 import { Bell } from 'lucide-react';
+import { NavBarContainer } from './NavBarContainer';
 
 interface HeaderProps {
   title: string;
@@ -15,7 +16,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="bg-gradient-to-r from-brand-600 to-brand-500 px-4 py-3 safe-area-pt shadow">
-      <div className="flex items-center justify-between max-w-md mx-auto">
+      <NavBarContainer>
         <div>
           {title ? (
             <h1 className="text-lg font-semibold text-white tracking-tight">{title}</h1>
@@ -34,7 +35,7 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           </div>
         )}
-      </div>
+      </NavBarContainer>
     </header>
   );
 };
