@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Camera, LogOut, User, Phone, Mail } from 'lucide-react';
-import { Header } from '../layout/Header';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -71,13 +70,11 @@ export const ProfileSettings: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      <Header title="Profile" />
-      
-      <div className="px-4 py-6 max-w-md mx-auto space-y-6">
+      <div className="px-4 pt-4 pb-6 max-w-md mx-auto space-y-6">
         {/* Profile Photo */}
-        <Card className="text-center">
+        <Card className="text-center bg-transparent shadow-none border-0">
           <div className="relative inline-block">
-            <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-200 mx-auto mb-4">
+            <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-200 mx-auto mb-4">
               {user.profilePhoto ? (
                 <img
                   src={user.profilePhoto}
@@ -86,7 +83,7 @@ export const ProfileSettings: React.FC = () => {
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-blue-100">
-                  <User className="w-8 h-8 text-blue-600" />
+                  <User className="w-10 h-10 text-blue-600" />
                 </div>
               )}
             </div>
@@ -105,11 +102,15 @@ export const ProfileSettings: React.FC = () => {
           </div>
           
           <h2 className="text-xl font-semibold text-gray-900">{user.name}</h2>
-          <p className="text-gray-600 capitalize">{user.role}</p>
+          <div className="mt-1">
+            <span className="inline-block px-2.5 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700 capitalize">
+              {user.role}
+            </span>
+          </div>
         </Card>
 
         {/* Profile Information */}
-        <Card>
+        <Card className="bg-transparent shadow-none border-0">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900">Personal Information</h3>
             {!editing && (
@@ -191,7 +192,7 @@ export const ProfileSettings: React.FC = () => {
         </Card>
 
         {/* Account Actions */}
-        <Card>
+        <Card className="bg-transparent shadow-none border-0">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Account</h3>
           
           <Button

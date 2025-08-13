@@ -117,14 +117,14 @@ export const WorkOrdersList: React.FC<WorkOrdersListProps> = ({ onWorkOrderClick
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      {/* Shared Header */}
-      <Header title="Work Orders" />
-
-      {/* Controls */}
-      <div className="px-4 pt-4 max-w-md mx-auto">
-        <div className="bg-white rounded-xl shadow-sm border p-4">
+      {/* Header with inlined controls; bell removed */}
+      <Header 
+        title="" 
+        showNotifications={false}
+        plain
+        subContent={(
           <div className="flex items-center gap-2">
-            <div className="flex items-center bg-gray-50 rounded-lg px-3 py-2 flex-1 border border-gray-200">
+            <div className="flex items-center bg-white rounded-lg px-3 py-2 flex-1 border border-gray-200 shadow-sm">
               <Search size={18} className="text-gray-500 mr-2" />
               <input
                 value={query}
@@ -133,7 +133,7 @@ export const WorkOrdersList: React.FC<WorkOrdersListProps> = ({ onWorkOrderClick
                 className="bg-transparent outline-none placeholder-gray-400 text-gray-900 w-full"
               />
             </div>
-            <div className="bg-gray-50 rounded-lg px-3 py-2 flex items-center border border-gray-200">
+            <div className="bg-white rounded-lg px-3 py-2 flex items-center border border-gray-200 shadow-sm">
               <Filter size={18} className="text-gray-500 mr-2" />
               <select
                 value={sort}
@@ -145,23 +145,25 @@ export const WorkOrdersList: React.FC<WorkOrdersListProps> = ({ onWorkOrderClick
               </select>
             </div>
           </div>
+        )}
+      />
 
-          {/* Status pills */}
-          <div className="mt-3 flex gap-2 overflow-x-auto no-scrollbar">
-            {STATUS_OPTIONS.map(opt => {
-              const Icon = opt.icon;
-              const active = status === opt.id;
-              return (
-                <button
-                  key={opt.id}
-                  onClick={() => setStatus(opt.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm whitespace-nowrap transition-colors ${active ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-                >
-                  <Icon size={16} /> {opt.label}
-                </button>
-              );
-            })}
-          </div>
+      {/* Status pills */}
+      <div className="px-4 pt-4 max-w-md mx-auto">
+        <div className="mt-0 flex gap-2 overflow-x-auto no-scrollbar">
+          {STATUS_OPTIONS.map(opt => {
+            const Icon = opt.icon;
+            const active = status === opt.id;
+            return (
+              <button
+                key={opt.id}
+                onClick={() => setStatus(opt.id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm whitespace-nowrap transition-colors ${active ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+              >
+                <Icon size={16} /> {opt.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 

@@ -6,7 +6,7 @@ import { Card } from '../ui/Card';
 import { WorkOrder } from '../../types';
 import { WorkOrderService } from '../../services/WorkOrderService';
 import { useAuth } from '../../contexts/AuthContext';
-import { MapPin, Clock, Calendar, User, AlertCircle } from 'lucide-react';
+import { MapPin, Clock, Calendar, AlertCircle } from 'lucide-react';
 
 interface DashboardProps {
   onWorkOrderClick: (workOrderId: string) => void;
@@ -18,13 +18,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick }) => {
   const { user } = useAuth();
   const [locationNames, setLocationNames] = useState<Record<string, string>>({});
 
-  // Helper function to get time of day for greeting
-  const getTimeOfDay = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'morning';
-    if (hour < 18) return 'afternoon';
-    return 'evening';
-  };
+  // Greeting is now rendered in the Header component.
 
   // Format time for display
   const formatTime = (dateString?: string | Date) => {
@@ -95,40 +89,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick }) => {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      <Header title="Dashboard" notificationCount={todaysWorkOrders.length} />
+      <Header 
+        title="Dashboard" 
+        notificationCount={todaysWorkOrders.length}
+        greetingName={user?.name?.split(' ')[0] || 'Technician'}
+        greetingPhoto={user?.profilePhoto}
+        plain
+      />
       
       <div className="px-4 py-6 max-w-md mx-auto space-y-6">
-        {/* Personal Greeting */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="flex items-center gap-4">
-            {/* Avatar */}
-            {user?.profilePhoto ? (
-              <img
-                src={user.profilePhoto}
-                alt={user.name || 'User avatar'}
-                className="w-14 h-14 rounded-full object-cover"
-              />
-            ) : (
-              <div className="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center">
-                <User className="w-7 h-7 text-blue-600" />
-              </div>
-            )}
-            {/* Greeting and date */}
-            <div className="flex flex-col">
-              <h2 className="text-lg font-semibold text-gray-900">
-                Good {getTimeOfDay()}, {user?.name?.split(' ')[0] || 'Technician'}
-              </h2>
-              <p className="text-sm text-gray-500">
-                {new Date().toLocaleDateString('en-US', { 
-                  weekday: 'long', 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
-                })}
-              </p>
-            </div>
-          </div>
-        </div>
+        {/* Personal Greeting moved into Header */}
 
         {/* Next Job - Simplified single version */}
         {nextJob && (
