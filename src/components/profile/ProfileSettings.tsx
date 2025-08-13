@@ -68,11 +68,18 @@ export const ProfileSettings: React.FC = () => {
 
   if (!user) return null;
 
+  // Status pill derived from profiles.type -> user.role
+  const role = (user.role || 'technician').toLowerCase();
+  const roleStyles = role === 'admin'
+    ? 'bg-purple-100 text-purple-700'
+    : 'bg-blue-100 text-blue-700';
+  const roleText = role === 'admin' ? 'Admin' : 'Technician';
+
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       <div className="px-4 pt-4 pb-6 max-w-md mx-auto space-y-6">
         {/* Profile Photo */}
-        <Card className="text-center bg-transparent shadow-none border-0">
+        <Card variant="plain" className="text-center bg-transparent bg-none shadow-none border-0">
           <div className="relative inline-block">
             <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-200 mx-auto mb-4">
               {user.profilePhoto ? (
@@ -103,14 +110,14 @@ export const ProfileSettings: React.FC = () => {
           
           <h2 className="text-xl font-semibold text-gray-900">{user.name}</h2>
           <div className="mt-1">
-            <span className="inline-block px-2.5 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700 capitalize">
-              {user.role}
+            <span className={`inline-block px-2.5 py-0.5 text-xs rounded-full ${roleStyles}`}>
+              {roleText}
             </span>
           </div>
         </Card>
 
         {/* Profile Information */}
-        <Card className="bg-transparent shadow-none border-0">
+        <Card variant="plain" className="bg-transparent bg-none shadow-none border-0">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900">Personal Information</h3>
             {!editing && (
@@ -192,7 +199,7 @@ export const ProfileSettings: React.FC = () => {
         </Card>
 
         {/* Account Actions */}
-        <Card className="bg-transparent shadow-none border-0">
+        <Card variant="plain" className="bg-transparent shadow-none border-0">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Account</h3>
           
           <Button

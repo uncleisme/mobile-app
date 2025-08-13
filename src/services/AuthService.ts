@@ -68,6 +68,7 @@ export class AuthService {
   }
 
   static async getCurrentUser(): Promise<User | null> {
+
     // Return cached
     if (this.currentUser) return this.currentUser;
     const { data, error } = await supabase.auth.getUser();
@@ -78,9 +79,11 @@ export class AuthService {
       mapped = {
         ...mapped,
         name: profile.full_name || mapped.name,
+        role: (profile.type as User['role']) || mapped.role,
         profilePhoto: profile.avatar_url || mapped.profilePhoto,
       };
     }
+
     this.currentUser = mapped;
     return mapped;
   }
