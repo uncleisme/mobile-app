@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Header } from '../layout/Header';
+
 import { LeaveRequestForm } from './LeaveRequestForm';
 import { LeaveRequestsList } from './LeaveRequestsList';
 import { LeaveBalance } from './LeaveBalance';
@@ -42,13 +42,12 @@ export const LeaveManagement: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      <Header title="Leave" />
+    <div className="min-h-screen bg-gray-50 pb-20 pt-2">
       
       {!showRequestForm && (
         <>
           {/* Tab Navigation */}
-          <div className="bg-white border-b border-gray-200 px-4 py-3 max-w-md mx-auto rounded-b-xl">
+          <div className="px-4 py-3 max-w-md mx-auto">
             <div className="flex justify-between items-center mb-3">
               <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
                 {tabs.map((tab) => {
