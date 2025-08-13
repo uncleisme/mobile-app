@@ -13,13 +13,13 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
 }) => {
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
-    { id: 'work-orders', label: 'Work Orders', icon: ClipboardList },
+    { id: 'work-orders', label: 'Orders', icon: ClipboardList },
     { id: 'leave', label: 'Leave', icon: Calendar },
     { id: 'profile', label: 'Profile', icon: User },
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 safe-area-pb">
+    <div className="fixed bottom-0 left-0 right-0 bg-white px-4 safe-area-pb">
       <div className="h-14">
         <NavBarContainer justify="between" className="h-full gap-2">
           {tabs.map((tab) => {
