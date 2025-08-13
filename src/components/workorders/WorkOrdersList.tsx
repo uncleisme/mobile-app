@@ -124,16 +124,16 @@ export const WorkOrdersList: React.FC<WorkOrdersListProps> = ({ onWorkOrderClick
         plain
         subContent={(
           <div className="flex items-center gap-2">
-            <div className="flex items-center bg-white rounded-lg px-3 py-2 flex-1 border border-gray-200 shadow-sm">
+            <div className="flex items-center bg-gray-100 rounded-full px-3 py-2 flex-1">
               <Search size={18} className="text-gray-500 mr-2" />
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search by title, description or location"
-                className="bg-transparent outline-none placeholder-gray-400 text-gray-900 w-full"
+                className="bg-transparent outline-none placeholder-gray-500 text-gray-900 w-full"
               />
             </div>
-            <div className="bg-white rounded-lg px-3 py-2 flex items-center border border-gray-200 shadow-sm">
+            <div className="bg-gray-100 rounded-full px-3 py-2 flex items-center">
               <Filter size={18} className="text-gray-500 mr-2" />
               <select
                 value={sort}
