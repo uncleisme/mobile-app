@@ -11,10 +11,10 @@ interface WorkOrdersListProps {
 
 const STATUS_OPTIONS = [
   { id: 'all', label: 'All', icon: Circle },
-  { id: 'pending', label: 'Pending', icon: Clock },
+  { id: 'active', label: 'Active', icon: Circle },
   { id: 'in_progress', label: 'In Progress', icon: PlayCircle },
   { id: 'review', label: 'Review', icon: Eye },
-  { id: 'completed', label: 'Completed', icon: CheckCircle2 },
+  { id: 'done', label: 'Done', icon: CheckCircle2 },
   { id: 'overdue', label: 'Overdue', icon: AlertTriangle },
 ] as const;
 
@@ -75,14 +75,14 @@ export const WorkOrdersList: React.FC<WorkOrdersListProps> = ({ onWorkOrderClick
     if (status !== 'all') {
       result = result.filter(w => {
         const s = (w.status || '').toLowerCase();
-        if (status === 'pending') return ['pending','new','open','assigned'].includes(s);
+        if (status === 'active') return ['active','pending','new','open','assigned'].includes(s);
         if (status === 'in_progress') return ['in progress','in_progress','started','working'].includes(s);
         if (status === 'review') return ['review','in review','in_review','awaiting review','awaiting_review'].includes(s);
-        if (status === 'completed') return ['completed','done','closed'].includes(s);
+        if (status === 'done') return ['done','completed','closed'].includes(s);
         if (status === 'overdue') {
           const due = new Date(w.due_date);
           const today = new Date(); today.setHours(0,0,0,0);
-          return due < today && !['completed','done','closed'].includes(s);
+          return due < today && !['done','completed','closed'].includes(s);
         }
         return true;
       });
@@ -104,8 +104,8 @@ export const WorkOrdersList: React.FC<WorkOrdersListProps> = ({ onWorkOrderClick
   const statusBadge = (wo: WorkOrder) => {
     const s = (wo.status || '').toLowerCase();
     // Explicit statuses take precedence over overdue
-    if (['completed','done','closed'].includes(s)) return (
-      <span className="px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-700">Completed</span>
+    if (['done','completed','closed'].includes(s)) return (
+      <span className="px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-700">Done</span>
     );
     if (['review','in review','in_review','awaiting review','awaiting_review'].includes(s)) return (
       <span className="px-2 py-0.5 text-xs rounded-full bg-violet-100 text-violet-700">Review</span>
@@ -119,7 +119,7 @@ export const WorkOrdersList: React.FC<WorkOrdersListProps> = ({ onWorkOrderClick
     if (due < today) return (
       <span className="px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-700">Overdue</span>
     );
-    return <span className="px-2 py-0.5 text-xs rounded-full bg-amber-100 text-amber-700">Pending</span>;
+    return <span className="px-2 py-0.5 text-xs rounded-full bg-amber-100 text-amber-700">Active</span>;
   };
 
   return (

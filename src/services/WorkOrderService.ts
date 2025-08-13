@@ -15,6 +15,7 @@ export class WorkOrderService {
     work_type,
     status,
     priority,
+    requested_by,
     assigned_to,
     asset_id,
     created_at
@@ -52,7 +53,7 @@ export class WorkOrderService {
       description: String(row.description || ''),
       created_date: createdAt ?? new Date(),
       due_date: due ?? new Date(),
-      requested_by: '',
+      requested_by: row.requested_by ? String(row.requested_by) : undefined,
       assigned_to: row.assigned_to ? String(row.assigned_to) : undefined,
       // Back-compat fields used by components
       scheduledDate: due,
@@ -60,6 +61,33 @@ export class WorkOrderService {
       assetId: row.asset_id ? String(row.asset_id) : undefined,
       assignedTo: row.assigned_to ? String(row.assigned_to) : undefined,
     } as WorkOrder;
+  }
+
+  /**
+   * Fetch a mapping of profile id -> display name from Supabase 'profiles' table.
+   * Prefers 'name' if present, otherwise falls back to 'full_name', then 'email'.
+   */
+  static async getProfileNamesByIds(ids: string[]): Promise<Record<string, string>> {
+    const unique = Array.from(new Set(ids.filter(Boolean)));
+    if (unique.length === 0) return {};
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, name, full_name, email')
+        .in('id', unique);
+      if (error) throw error;
+      const map: Record<string, string> = {};
+      (data || []).forEach((row: any) => {
+        const id = String(row.id);
+        const name = String(row.name || row.full_name || row.email || id);
+        map[id] = name;
+      });
+      unique.forEach(id => { if (!map[id]) map[id] = id; });
+      return map;
+    } catch (err) {
+      console.warn('Failed to fetch profiles, returning ID map:', err);
+      return unique.reduce((acc, id) => { acc[id] = id; return acc; }, {} as Record<string, string>);
+    }
   }
 
   // Fetch minimal fields from Supabase matching UI needs, fallback to mocks
@@ -130,10 +158,13 @@ export class WorkOrderService {
     hoursSpent: number,
     photos: string[] = []
   ): Promise<void> {
-    // Implement your Supabase update logic here when ready.
-    // For now, perform no-op to avoid mock mutations.
-    void workOrderId; void notes; void hoursSpent; void photos;
-    return;
+    // Update the work order status to 'Review'. Notes/hours/photos not persisted yet.
+    void notes; void hoursSpent; void photos;
+    const { error } = await supabase
+      .from('work_orders')
+      .update({ status: 'Review', updated_at: new Date().toISOString() })
+      .eq('id', workOrderId);
+    if (error) throw error;
   }
 
   static async getMaintenanceLogsForWorkOrder(workOrderId: string): Promise<MaintenanceLog[]> {

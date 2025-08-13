@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Camera } from 'lucide-react';
 import { Button } from '../ui/Button';
-import { Textarea } from '../ui/Textarea';
-import { Input } from '../ui/Input';
+// Removed Textarea and Input imports as we are not collecting notes or hours
 import { Card } from '../ui/Card';
 import { WorkOrderService } from '../../services/WorkOrderService';
 
@@ -19,8 +18,7 @@ export const CompleteWorkOrderForm: React.FC<CompleteWorkOrderFormProps> = ({
   onBack,
   onComplete,
 }) => {
-  const [notes, setNotes] = useState('');
-  const [hoursSpent, setHoursSpent] = useState('');
+  // Removed notes and hours state per requirements
   const [photos, setPhotos] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -41,13 +39,9 @@ export const CompleteWorkOrderForm: React.FC<CompleteWorkOrderFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!notes.trim()) {
-      setError('Please provide completion notes');
-      return;
-    }
-
-    if (!hoursSpent || parseFloat(hoursSpent) <= 0) {
-      setError('Please enter valid hours spent');
+    // Photos are required
+    if (photos.length === 0) {
+      setError('At least one photo is required');
       return;
     }
 
@@ -55,12 +49,7 @@ export const CompleteWorkOrderForm: React.FC<CompleteWorkOrderFormProps> = ({
     setError('');
 
     try {
-      await WorkOrderService.completeWorkOrder(
-        workOrderId,
-        notes.trim(),
-        parseFloat(hoursSpent),
-        photos
-      );
+      await WorkOrderService.completeWorkOrder(workOrderId, '', 0, photos);
       onComplete();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to complete work order');
@@ -71,7 +60,7 @@ export const CompleteWorkOrderForm: React.FC<CompleteWorkOrderFormProps> = ({
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      <div className="bg-white border-b border-gray-200 px-4 py-3 safe-area-pt">
+      <div className="px-4 py-3 safe-area-pt">
         <div className="flex items-center gap-3 max-w-md mx-auto">
           <button
             onClick={onBack}
@@ -88,37 +77,9 @@ export const CompleteWorkOrderForm: React.FC<CompleteWorkOrderFormProps> = ({
 
       <div className="px-4 py-6 max-w-md mx-auto">
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Completion Notes */}
-          <Card>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Completion Notes</h3>
-            <Textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Describe the work completed, any issues encountered, and recommendations..."
-              rows={4}
-              fullWidth
-              required
-            />
-          </Card>
-
-          {/* Hours Spent */}
-          <Card>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Time Spent</h3>
-            <Input
-              type="number"
-              step="0.5"
-              min="0.5"
-              value={hoursSpent}
-              onChange={(e) => setHoursSpent(e.target.value)}
-              placeholder="Enter hours spent (e.g., 2.5)"
-              fullWidth
-              required
-            />
-          </Card>
-
           {/* Photo Upload */}
           <Card>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Photos (Optional)</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Photos (Required)</h3>
             
             <div className="space-y-4">
               {/* Upload Button */}
@@ -132,6 +93,7 @@ export const CompleteWorkOrderForm: React.FC<CompleteWorkOrderFormProps> = ({
                   capture="environment"
                   onChange={handlePhotoUpload}
                   className="hidden"
+                  required
                 />
               </label>
 

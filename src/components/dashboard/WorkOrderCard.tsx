@@ -19,22 +19,31 @@ export const WorkOrderCard: React.FC<WorkOrderCardProps> = ({ workOrder, onClick
 
   const loadAsset = async () => {
     try {
-      const assetData = await WorkOrderService.getAssetById(workOrder.assetId);
-      setAsset(assetData);
+      if (!workOrder.assetId) return;
+      const assetData = await WorkOrderService.getAssetById(workOrder.assetId as string);
+      setAsset(assetData || null);
     } catch (error) {
       console.error('Failed to load asset:', error);
     }
   };
 
   const getStatusBadge = () => {
-    const statusConfig = {
-      pending: { variant: 'warning' as const, label: 'Pending' },
-      in_progress: { variant: 'info' as const, label: 'In Progress' },
-      completed: { variant: 'success' as const, label: 'Completed' },
-      cancelled: { variant: 'default' as const, label: 'Cancelled' },
+    const sRaw = (workOrder.status || '').toLowerCase();
+    const s = sRaw.replace(/\s+/g, '_');
+    // Map various values to the four allowed statuses
+    const key = (() => {
+      if (['in_progress','in','inprogress'].some(k => s.includes(k))) return 'in_progress';
+      if (s.includes('review')) return 'review';
+      if (['done','completed','closed'].some(k => s.includes(k))) return 'done';
+      return 'active';
+    })();
+    const statusConfig: Record<string, { variant: 'warning' | 'info' | 'success' | 'default'; label: string }> = {
+      active: { variant: 'warning', label: 'Active' },
+      in_progress: { variant: 'info', label: 'In Progress' },
+      review: { variant: 'info', label: 'Review' },
+      done: { variant: 'success', label: 'Done' },
     };
-
-    const config = statusConfig[workOrder.status];
+    const config = statusConfig[key];
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
@@ -46,20 +55,27 @@ export const WorkOrderCard: React.FC<WorkOrderCardProps> = ({ workOrder, onClick
       critical: { variant: 'danger' as const, label: 'Critical' },
     };
 
-    const config = priorityConfig[workOrder.priority];
+    const pRaw = (workOrder.priority || '').toLowerCase();
+    const key: keyof typeof priorityConfig = (['low','medium','high','critical'].includes(pRaw)
+      ? (pRaw as keyof typeof priorityConfig)
+      : 'medium');
+    const config = priorityConfig[key];
     return <Badge variant={config.variant} size="sm">{config.label}</Badge>;
   };
 
   const isOverdue = () => {
-    if (workOrder.status === 'completed') return false;
+    if ((workOrder.status || '').toLowerCase().includes('complete')) return false;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const scheduledDate = new Date(workOrder.scheduledDate);
+    const when = workOrder.scheduledDate ?? workOrder.due_date;
+    if (!when) return false;
+    const scheduledDate = new Date(when);
     scheduledDate.setHours(0, 0, 0, 0);
     return scheduledDate < today;
   };
 
-  const formatDate = (date: Date) => {
+  const formatDate = (date?: Date | string) => {
+    if (!date) return '';
     const today = new Date();
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -110,7 +126,7 @@ export const WorkOrderCard: React.FC<WorkOrderCardProps> = ({ workOrder, onClick
         <div className="flex items-center justify-between pt-2 border-t border-gray-100">
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <Calendar size={16} />
-            <span>{formatDate(workOrder.scheduledDate)}</span>
+            <span>{formatDate(workOrder.scheduledDate ?? workOrder.due_date)}</span>
             {isOverdue() && (
               <div className="flex items-center gap-1 text-red-600">
                 <AlertTriangle size={14} />

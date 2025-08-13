@@ -12,16 +12,25 @@ export const FilterTabs: React.FC<FilterTabsProps> = ({
   onFilterChange,
   workOrders,
 }) => {
+  const normalize = (s?: string) => (s || '').toLowerCase().replace(/\s+/g, '_');
   const getStatusCount = (status: string) => {
     if (status === 'all') return workOrders.length;
-    return workOrders.filter(wo => wo.status === status).length;
+    return workOrders.filter(wo => {
+      const s = normalize(wo.status);
+      if (status === 'active') return ['active','pending','new','open','assigned'].includes(s);
+      if (status === 'in_progress') return ['in_progress','in progress','started','working'].includes(s);
+      if (status === 'review') return ['review','in_review','in review','awaiting_review','awaiting review'].includes(s);
+      if (status === 'done') return ['done','completed','closed'].includes(s);
+      return false;
+    }).length;
   };
 
   const tabs = [
     { id: 'all', label: 'All', count: getStatusCount('all') },
-    { id: 'pending', label: 'Pending', count: getStatusCount('pending') },
+    { id: 'active', label: 'Active', count: getStatusCount('active') },
     { id: 'in_progress', label: 'In Progress', count: getStatusCount('in_progress') },
-    { id: 'completed', label: 'Completed', count: getStatusCount('completed') },
+    { id: 'review', label: 'Review', count: getStatusCount('review') },
+    { id: 'done', label: 'Done', count: getStatusCount('done') },
   ];
 
   return (

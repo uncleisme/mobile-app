@@ -262,8 +262,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick }) => {
                       {(() => {
                         const due = new Date(nextJob.due_date as any);
                         const now = new Date();
-                        const isCompleted = (nextJob.status || '').toLowerCase() === 'completed';
-                        if (!isNaN(due.getTime()) && due < now && !isCompleted) {
+                        const showOverdue = !isNaN(due.getTime()) && due < now;
+                        if (showOverdue) {
                           return (
                             <aside className="flex flex-col items-center justify-center ml-2 text-red-600">
                               <AlertCircle className="w-8 h-8" />
