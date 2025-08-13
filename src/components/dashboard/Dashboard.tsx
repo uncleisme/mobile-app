@@ -11,9 +11,10 @@ import { Activity } from '../activity/Activity';
 
 interface DashboardProps {
   onWorkOrderClick: (workOrderId: string) => void;
+  refreshKey?: number;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshKey }) => {
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
@@ -132,7 +133,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick }) => {
     };
 
     loadWorkOrders();
-  }, [user]);
+  }, [user, refreshKey]);
 
   // Resolve location names for any loaded work orders
   useEffect(() => {
@@ -262,8 +263,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick }) => {
                       {(() => {
                         const due = new Date(nextJob.due_date as any);
                         const now = new Date();
-                        const isCompleted = (nextJob.status || '').toLowerCase() === 'completed';
-                        if (!isNaN(due.getTime()) && due < now && !isCompleted) {
+                        const showOverdue = !isNaN(due.getTime()) && due < now;
+                        if (showOverdue) {
                           return (
                             <aside className="flex flex-col items-center justify-center ml-2 text-red-600">
                               <AlertCircle className="w-8 h-8" />

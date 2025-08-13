@@ -1,26 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, MapPin, Calendar, Clock, AlertTriangle, Hash, User2, Building2, Phone, Mail, Layers } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, AlertTriangle, User2 } from 'lucide-react';
 import { Header } from '../layout/Header';
 import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
-import { WorkOrder, Asset } from '../../types';
+import { WorkOrder } from '../../types';
 import { WorkOrderService } from '../../services/WorkOrderService';
 
 interface WorkOrderDetailProps {
   workOrderId: string;
   onBack: () => void;
-  onCompleteWorkOrder: (workOrderId: string) => void;
 }
 
 export const WorkOrderDetail: React.FC<WorkOrderDetailProps> = ({
   workOrderId,
   onBack,
-  onCompleteWorkOrder,
 }) => {
   const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
-  const [asset, setAsset] = useState<Asset | null>(null);
   const [loading, setLoading] = useState(true);
   const [locationName, setLocationName] = useState<string>('');
 
@@ -30,12 +27,6 @@ export const WorkOrderDetail: React.FC<WorkOrderDetailProps> = ({
         setLoading(true);
         const workOrderData = await WorkOrderService.getWorkOrderById(workOrderId);
         setWorkOrder(workOrderData);
-        if (workOrderData?.assetId) {
-          const assetData = await WorkOrderService.getAssetById(workOrderData.assetId);
-          setAsset(assetData);
-        } else {
-          setAsset(null);
-        }
         // Resolve location name if present
         if (workOrderData?.location_id) {
           const map = await WorkOrderService.getLocationNamesByIds([workOrderData.location_id]);
@@ -46,12 +37,12 @@ export const WorkOrderDetail: React.FC<WorkOrderDetailProps> = ({
       } catch (error) {
         console.error('Failed to load work order details:', error);
         setWorkOrder(null);
-        setAsset(null);
         setLocationName('');
       } finally {
         setLoading(false);
       }
     };
+
     load();
   }, [workOrderId]);
 
@@ -82,28 +73,32 @@ export const WorkOrderDetail: React.FC<WorkOrderDetailProps> = ({
   }
 
   const getStatusBadge = () => {
-    type StatusKey = 'pending' | 'in_progress' | 'completed' | 'cancelled' | 'review';
+    type StatusKey = 'active' | 'in_progress' | 'done' | 'review';
     // Normalize and map loosely to supported badges
     const sRaw = (workOrder.status || '').toLowerCase();
     const normalized = sRaw.replace(/\s+/g, '_');
     const statusConfig: Record<StatusKey, { variant: 'warning' | 'info' | 'success' | 'default'; label: string }> = {
-      pending: { variant: 'warning', label: 'Pending' },
+      active: { variant: 'warning', label: 'Active' },
       in_progress: { variant: 'info', label: 'In Progress' },
-      completed: { variant: 'success', label: 'Completed' },
-      cancelled: { variant: 'default', label: 'Cancelled' },
+      done: { variant: 'success', label: 'Done' },
       review: { variant: 'info', label: 'Review' },
     };
 
-    let key: StatusKey = 'pending';
-    if ((['pending','in_progress','completed','cancelled','review'] as StatusKey[]).includes(normalized as StatusKey)) {
+    let key: StatusKey = 'active';
+    if ((['active','in_progress','done','review'] as StatusKey[]).includes(normalized as StatusKey)) {
       key = normalized as StatusKey;
     } else if (sRaw.includes('progress')) key = 'in_progress';
-    else if (sRaw.includes('complete')) key = 'completed';
-    else if (sRaw.includes('cancel')) key = 'cancelled';
+    else if (sRaw.includes('complete') || sRaw.includes('done') || sRaw.includes('closed')) key = 'done';
     else if (sRaw.includes('review')) key = 'review';
 
     const config = statusConfig[key];
     return <Badge variant={config.variant}>{config.label}</Badge>;
+  };
+
+  const getWorkTypeBadge = () => {
+    const wt = (workOrder.work_type || workOrder.job_type || '').trim();
+    if (!wt) return null;
+    return <Badge variant="default">{wt}</Badge>;
   };
 
   const getPriorityBadge = () => {
@@ -132,7 +127,6 @@ export const WorkOrderDetail: React.FC<WorkOrderDetailProps> = ({
   };
 
   const isOverdue = () => {
-    if ((workOrder.status || '').toLowerCase().includes('complete')) return false;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const when = workOrder.scheduledDate ?? workOrder.due_date;
@@ -142,16 +136,15 @@ export const WorkOrderDetail: React.FC<WorkOrderDetailProps> = ({
     return scheduledDate < today;
   };
 
-  const canComplete = ['pending','in_progress','review'].includes((workOrder.status || '').toLowerCase().replace(/\s+/g,'_'));
+  // Completion actions removed; no completion gating required
 
   const getBodyBgClass = () => {
     const s = (workOrder.status || '').toLowerCase().replace(/\s+/g, '_');
-    if (isOverdue() && s !== 'completed') return 'bg-rose-50';
-    if (s === 'completed') return 'bg-green-50';
+    if (isOverdue() && s !== 'done') return 'bg-rose-50';
+    if (s === 'done' || s === 'completed' || s === 'closed') return 'bg-green-50';
     if (s === 'in_progress') return 'bg-blue-50';
     if (s === 'review') return 'bg-violet-50';
-    if (s === 'cancelled') return 'bg-gray-100';
-    return 'bg-amber-50'; // pending / default
+    return 'bg-amber-50'; // active / default
   };
 
   return (
@@ -171,132 +164,79 @@ export const WorkOrderDetail: React.FC<WorkOrderDetailProps> = ({
       </div>
 
       <div className="px-4 py-6 max-w-md mx-auto space-y-6">
-        {/* Overview */}
+        {/* 1st card: status pills (work_type, status, priority, overdue) */
+        }
         <Card>
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900">{workOrder.title || 'Untitled Work Order'}</h2>
-              <p className="text-gray-600 mt-1">{workOrder.description || 'No description provided.'}</p>
-            </div>
-            <div className="flex flex-col items-end gap-2">
-              {getStatusBadge()}
-              {getPriorityBadge()}
-            </div>
-          </div>
-          {isOverdue() && (
-            <div className="mt-3 flex items-center gap-2 text-red-700 bg-red-50 px-3 py-2 rounded-lg">
-              <AlertTriangle size={16} />
-              <span className="text-sm font-medium">This work order is overdue</span>
-            </div>
-          )}
-        </Card>
-
-        {/* IDs & Types */}
-        <Card>
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div className="flex items-center gap-2 text-gray-600"><Hash size={16} /> <span className="font-medium text-gray-900">WO ID:</span> <span className="ml-1">{workOrder.work_order_id || workOrder.id}</span></div>
-            <div className="flex items-center gap-2 text-gray-600"><Layers size={16} /> <span className="font-medium text-gray-900">Type:</span> <span className="ml-1">{workOrder.work_type || workOrder.job_type || 'N/A'}</span></div>
-            <div className="flex items-center gap-2 text-gray-600"><User2 size={16} /> <span className="font-medium text-gray-900">Requested By:</span> <span className="ml-1">{workOrder.requested_by || 'N/A'}</span></div>
-            <div className="flex items-center gap-2 text-gray-600"><User2 size={16} /> <span className="font-medium text-gray-900">Assigned To:</span> <span className="ml-1">{workOrder.assigned_to || workOrder.assignedTo || 'Unassigned'}</span></div>
-          </div>
-        </Card>
-
-        {/* Schedule */}
-        <Card>
-          <h3 className="text-lg font-semibold text-gray-900 mb-3">Schedule</h3>
-          <div className="grid grid-cols-1 gap-3 text-sm">
-            <div className="flex items-center gap-2"><Calendar size={16} className="text-gray-400" /> <span className="text-gray-600">Due:</span> <span className="font-medium">{formatDate(workOrder.due_date)}</span></div>
-            <div className="flex items-center gap-2"><Calendar size={16} className="text-gray-400" /> <span className="text-gray-600">Scheduled:</span> <span className="font-medium">{formatDate(workOrder.scheduledDate ?? workOrder.due_date)}</span></div>
-            {workOrder.created_date && (
-              <div className="flex items-center gap-2"><Calendar size={16} className="text-gray-400" /> <span className="text-gray-600">Created:</span> <span className="font-medium">{formatDate(workOrder.created_date)}</span></div>
-            )}
-            {workOrder.updated_at && (
-              <div className="flex items-center gap-2"><Calendar size={16} className="text-gray-400" /> <span className="text-gray-600">Updated:</span> <span className="font-medium">{formatDate(workOrder.updated_at)}</span></div>
-            )}
-            {workOrder.estimatedHours && (
-              <div className="flex items-center gap-2"><Clock size={16} className="text-gray-400" /> <span className="text-gray-600">Estimated:</span> <span className="font-medium">{workOrder.estimatedHours}h</span></div>
-            )}
-            {workOrder.actualHours && (
-              <div className="flex items-center gap-2"><Clock size={16} className="text-gray-400" /> <span className="text-gray-600">Actual:</span> <span className="font-medium">{workOrder.actualHours}h</span></div>
+          <div className="flex flex-wrap items-center gap-2">
+            {getWorkTypeBadge()}
+            {getStatusBadge()}
+            {getPriorityBadge()}
+            {isOverdue() && (
+              <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full bg-red-100 text-red-700">
+                <AlertTriangle size={14} /> Overdue
+              </span>
             )}
           </div>
         </Card>
 
-        {/* Location */}
+        {/* 2nd card: title and dates */}
         <Card>
-          <h3 className="text-lg font-semibold text-gray-900 mb-3">Location</h3>
+          <div className="space-y-2">
+            <h2 className="text-base font-semibold text-gray-900">
+              {(workOrder.work_order_id || workOrder.id) + ' | ' + (workOrder.title || 'Untitled Work Order')}
+            </h2>
+            <div className="grid grid-cols-1 gap-2 text-sm text-gray-700">
+              {workOrder.created_date && (
+                <div className="flex items-center gap-2">
+                  <Calendar size={16} className="text-gray-400" />
+                  <span className="text-gray-600">Created:</span>
+                  <span className="font-medium">{formatDate(workOrder.created_date)}</span>
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <Calendar size={16} className="text-gray-400" />
+                <span className="text-gray-600">Due:</span>
+                <span className="font-medium">{formatDate(workOrder.due_date)}</span>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* 3rd card: description */}
+        <Card>
+          <div>
+            <h3 className="text-sm font-medium text-gray-600 mb-1">Description</h3>
+            <p className="text-gray-800 whitespace-pre-line">{workOrder.description || 'No description provided.'}</p>
+          </div>
+        </Card>
+
+        {/* 4th card: people (requested_by, assigned_to) */}
+        <Card>
+          <div className="grid grid-cols-1 gap-2 text-sm">
+            <div className="flex items-center gap-2">
+              <User2 size={16} className="text-gray-400" />
+              <span className="text-gray-600">Requested By:</span>
+              <span className="font-medium">{workOrder.requested_by || 'N/A'}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <User2 size={16} className="text-gray-400" />
+              <span className="text-gray-600">Assigned To:</span>
+              <span className="font-medium">{workOrder.assigned_to || workOrder.assignedTo || 'Unassigned'}</span>
+            </div>
+          </div>
+        </Card>
+
+        {/* 5th card: location */}
+        <Card>
           <div className="flex items-start gap-2 text-sm">
             <MapPin size={16} className="text-gray-400 mt-0.5" />
             <div>
               <div className="text-gray-900 font-medium">{locationName || workOrder.location_id || 'N/A'}</div>
-              {asset?.location && <div className="text-gray-600">Asset: {asset.location}</div>}
             </div>
           </div>
         </Card>
 
-        {/* Contact */}
-        {(workOrder.contact_person || workOrder.contact_number || workOrder.contact_email) && (
-          <Card>
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">Contact</h3>
-            <div className="grid grid-cols-1 gap-2 text-sm">
-              {workOrder.contact_person && <div className="flex items-center gap-2"><User2 size={16} className="text-gray-400" /> <span className="text-gray-600">Person:</span> <span className="font-medium">{workOrder.contact_person}</span></div>}
-              {workOrder.contact_number && <div className="flex items-center gap-2"><Phone size={16} className="text-gray-400" /> <span className="text-gray-600">Phone:</span> <span className="font-medium">{workOrder.contact_number}</span></div>}
-              {workOrder.contact_email && <div className="flex items-center gap-2"><Mail size={16} className="text-gray-400" /> <span className="text-gray-600">Email:</span> <span className="font-medium">{workOrder.contact_email}</span></div>}
-            </div>
-          </Card>
-        )}
-
-        {/* Recurrence */}
-        {(workOrder.recurrence_rule || workOrder.recurrence_start_date || workOrder.recurrence_end_date) && (
-          <Card>
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">Recurrence</h3>
-            <div className="grid grid-cols-1 gap-2 text-sm">
-              {workOrder.recurrence_rule && <div><span className="text-gray-600">Rule:</span> <span className="font-medium">{workOrder.recurrence_rule}</span></div>}
-              {workOrder.recurrence_start_date && <div><span className="text-gray-600">Start:</span> <span className="font-medium">{formatDate(workOrder.recurrence_start_date)}</span></div>}
-              {workOrder.recurrence_end_date && <div><span className="text-gray-600">End:</span> <span className="font-medium">{formatDate(workOrder.recurrence_end_date)}</span></div>}
-            </div>
-          </Card>
-        )}
-
-        {/* Metadata */}
-        {(workOrder.reference_text || workOrder.unit_number || workOrder.service_provider_id) && (
-          <Card>
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">Metadata</h3>
-            <div className="grid grid-cols-1 gap-2 text-sm">
-              {workOrder.reference_text && <div><span className="text-gray-600">Reference:</span> <span className="font-medium">{workOrder.reference_text}</span></div>}
-              {workOrder.unit_number && <div><span className="text-gray-600">Unit:</span> <span className="font-medium">{workOrder.unit_number}</span></div>}
-              {workOrder.service_provider_id && <div className="flex items-center gap-2"><Building2 size={16} className="text-gray-400" /> <span className="text-gray-600">Service Provider:</span> <span className="font-medium">{workOrder.service_provider_id}</span></div>}
-            </div>
-          </Card>
-        )}
-
-        {/* Asset Information */}
-        {asset && (
-          <Card>
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">Asset</h3>
-            <div className="space-y-3 text-sm">
-              <div><span className="text-gray-600">Name:</span> <span className="font-medium">{asset.name}</span></div>
-              <div className="grid grid-cols-2 gap-4">
-                <div><span className="text-gray-600">Type:</span> <span className="font-medium">{asset.type}</span></div>
-                <div><span className="text-gray-600">Status:</span> <span className="font-medium capitalize">{asset.status.replace('_',' ')}</span></div>
-              </div>
-              {asset.location && <div><span className="text-gray-600">Location:</span> <span className="font-medium">{asset.location}</span></div>}
-              {asset.manufacturer && <div><span className="text-gray-600">Manufacturer:</span> <span className="font-medium">{asset.manufacturer}</span></div>}
-              {asset.model && <div><span className="text-gray-600">Model:</span> <span className="font-medium">{asset.model}</span></div>}
-              {asset.serialNumber && <div><span className="text-gray-600">Serial:</span> <span className="font-medium">{asset.serialNumber}</span></div>}
-            </div>
-          </Card>
-        )}
-
-        {/* Actions */}
-        <div className="grid grid-cols-2 gap-3">
-          <Button variant="secondary" onClick={onBack}>Back</Button>
-          {canComplete ? (
-            <Button onClick={() => onCompleteWorkOrder(workOrder.id)} variant="success">Complete</Button>
-          ) : (
-            <Button variant="primary" disabled>Completed</Button>
-          )}
-        </div>
+        {/* Actions removed per request */}
       </div>
     </div>
   );

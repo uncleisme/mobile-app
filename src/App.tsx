@@ -22,6 +22,7 @@ function AppContent() {
   const [workOrderView, setWorkOrderView] = useState<WorkOrderView>('list');
   const [selectedWorkOrderId, setSelectedWorkOrderId] = useState<string>('');
   const [selectedWorkOrderTitle, setSelectedWorkOrderTitle] = useState<string>('');
+  const [refreshKey, setRefreshKey] = useState<number>(0);
 
   // Debug logging
   console.log('App component - user:', user, 'loading:', loading, 'isAuthenticated:', isAuthenticated);
@@ -31,17 +32,14 @@ function AppContent() {
     setWorkOrderView('detail');
   };
 
-  const handleCompleteWorkOrder = (workOrderId: string, title: string) => {
-    setSelectedWorkOrderId(workOrderId);
-    setSelectedWorkOrderTitle(title);
-    setWorkOrderView('complete');
-  };
+  // Removed: completion now handled via separate navigation flow; no direct trigger from detail
 
   const handleWorkOrderCompleted = () => {
     setWorkOrderView('list');
     setSelectedWorkOrderId('');
     setSelectedWorkOrderTitle('');
     setActiveTab('dashboard');
+    setRefreshKey((k) => k + 1);
   };
 
   const handleBackToList = () => {
@@ -61,7 +59,7 @@ function AppContent() {
   const renderMainContent = () => {
     // Distinct Work Orders list page
     if (activeTab === 'work-orders' && workOrderView === 'list') {
-      return <WorkOrdersList onWorkOrderClick={handleWorkOrderClick} />;
+      return <WorkOrdersList onWorkOrderClick={handleWorkOrderClick} refreshKey={refreshKey} />;
     }
 
     if (activeTab === 'work-orders' || (activeTab === 'dashboard' && workOrderView !== 'list')) {
@@ -71,10 +69,6 @@ function AppContent() {
             <WorkOrderDetail
               workOrderId={selectedWorkOrderId}
               onBack={handleBackToList}
-              onCompleteWorkOrder={(id) => {
-                const workOrder = { id, title: selectedWorkOrderTitle };
-                handleCompleteWorkOrder(id, workOrder.title);
-              }}
             />
           );
         case 'complete':
@@ -87,19 +81,19 @@ function AppContent() {
             />
           );
         default:
-          return <Dashboard onWorkOrderClick={handleWorkOrderClick} />;
+          return <Dashboard onWorkOrderClick={handleWorkOrderClick} refreshKey={refreshKey} />;
       }
     }
 
     switch (activeTab) {
       case 'dashboard':
-        return <Dashboard onWorkOrderClick={handleWorkOrderClick} />;
+        return <Dashboard onWorkOrderClick={handleWorkOrderClick} refreshKey={refreshKey} />;
       case 'leave':
         return <LeaveManagement />;
       case 'profile':
         return <ProfileSettings />;
       default:
-        return <Dashboard onWorkOrderClick={handleWorkOrderClick} />;
+        return <Dashboard onWorkOrderClick={handleWorkOrderClick} refreshKey={refreshKey} />;
     }
   };
 
