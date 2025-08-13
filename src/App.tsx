@@ -17,22 +17,17 @@ type WorkOrderView = 'list' | 'detail' | 'complete';
 
 // Main App Content Component (wrapped by AuthProvider)
 function AppContent() {
-  const { user, loading, isAuthenticated } = useAuth();
+  const { loading } = useAuth();
   const [activeTab, setActiveTab] = useState<AppView>('dashboard');
   const [workOrderView, setWorkOrderView] = useState<WorkOrderView>('list');
   const [selectedWorkOrderId, setSelectedWorkOrderId] = useState<string>('');
   const [selectedWorkOrderTitle, setSelectedWorkOrderTitle] = useState<string>('');
   const [refreshKey, setRefreshKey] = useState<number>(0);
 
-  // Debug logging
-  console.log('App component - user:', user, 'loading:', loading, 'isAuthenticated:', isAuthenticated);
-
   const handleWorkOrderClick = (workOrderId: string) => {
     setSelectedWorkOrderId(workOrderId);
     setWorkOrderView('detail');
   };
-
-  // Removed: completion now handled via separate navigation flow; no direct trigger from detail
 
   const handleWorkOrderCompleted = () => {
     setWorkOrderView('list');
@@ -40,6 +35,12 @@ function AppContent() {
     setSelectedWorkOrderTitle('');
     setActiveTab('dashboard');
     setRefreshKey((k) => k + 1);
+  };
+
+  const handleStartComplete = (workOrderId: string, title?: string) => {
+    setSelectedWorkOrderId(workOrderId);
+    setSelectedWorkOrderTitle(title || '');
+    setWorkOrderView('complete');
   };
 
   const handleBackToList = () => {
@@ -69,6 +70,7 @@ function AppContent() {
             <WorkOrderDetail
               workOrderId={selectedWorkOrderId}
               onBack={handleBackToList}
+              onCompleteClick={handleStartComplete}
             />
           );
         case 'complete':

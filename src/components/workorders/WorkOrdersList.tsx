@@ -27,6 +27,7 @@ export const WorkOrdersList: React.FC<WorkOrdersListProps> = ({ onWorkOrderClick
   const [status, setStatus] = useState<(typeof STATUS_OPTIONS)[number]['id']>('all');
   const [sort, setSort] = useState<'due_asc' | 'due_desc'>('due_asc');
   const [locationNames, setLocationNames] = useState<Record<string, string>>({});
+  const [profileNames, setProfileNames] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const load = async () => {
@@ -59,6 +60,24 @@ export const WorkOrdersList: React.FC<WorkOrdersListProps> = ({ onWorkOrderClick
       }
     };
     fetchLocations();
+  }, [workOrders]);
+
+  // Fetch profile full names for requested_by and assigned_to
+  useEffect(() => {
+    const fetchProfiles = async () => {
+      try {
+        const ids = Array.from(new Set(
+          workOrders.flatMap(w => [w.requested_by, w.assigned_to, w.assignedTo].filter(Boolean) as string[])
+        ));
+        if (ids.length === 0) { setProfileNames({}); return; }
+        const map = await WorkOrderService.getProfileNamesByIds(ids);
+        setProfileNames(map);
+      } catch (err) {
+        console.warn('Failed to resolve profile names:', err);
+        setProfileNames({});
+      }
+    };
+    fetchProfiles();
   }, [workOrders]);
 
   const filtered = useMemo(() => {
@@ -207,6 +226,12 @@ export const WorkOrdersList: React.FC<WorkOrdersListProps> = ({ onWorkOrderClick
                 <div className="mt-3 flex items-center gap-4 text-sm text-gray-600">
                   <div className="flex items-center gap-1"><Clock size={16} className="text-gray-400" /> {formatDate(wo.due_date)}</div>
                   <div className="flex items-center gap-1"><MapPin size={16} className="text-gray-400" /> {locationNames[wo.location_id] || wo.location_id || 'N/A'}</div>
+                </div>
+
+                {/* People line: show requested_by and assigned_to using resolved names */}
+                <div className="mt-2 text-xs text-gray-600 flex flex-wrap gap-x-4 gap-y-1">
+                  <span><span className="text-gray-500">Req:</span> {profileNames[wo.requested_by || ''] || wo.requested_by || 'N/A'}</span>
+                  <span><span className="text-gray-500">Asg:</span> {profileNames[(wo.assigned_to || wo.assignedTo) as string] || wo.assigned_to || wo.assignedTo || 'Unassigned'}</span>
                 </div>
               </div>
             ))}

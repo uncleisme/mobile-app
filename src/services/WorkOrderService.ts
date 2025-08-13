@@ -73,13 +73,14 @@ export class WorkOrderService {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, name, full_name, email')
+        .select('id, full_name, email')
         .in('id', unique);
       if (error) throw error;
       const map: Record<string, string> = {};
       (data || []).forEach((row: any) => {
         const id = String(row.id);
-        const name = String(row.name || row.full_name || row.email || id);
+        // Prefer full_name explicitly per requirement, then email
+        const name = String(row.full_name || row.email || id);
         map[id] = name;
       });
       unique.forEach(id => { if (!map[id]) map[id] = id; });

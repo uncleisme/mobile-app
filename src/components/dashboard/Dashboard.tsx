@@ -19,6 +19,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const [locationNames, setLocationNames] = useState<Record<string, string>>({});
+  const [profileNames, setProfileNames] = useState<Record<string, string>>({});
 
   // Greeting is now rendered in the Header component.
 
@@ -149,6 +150,24 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
       }
     };
     fetchLocations();
+  }, [workOrders]);
+
+  // Resolve profile full names for requested_by and assigned_to
+  useEffect(() => {
+    const fetchProfiles = async () => {
+      try {
+        const ids = Array.from(new Set(
+          workOrders.flatMap(w => [w.requested_by, w.assigned_to, (w as any).assignedTo].filter(Boolean) as string[])
+        ));
+        if (ids.length === 0) { setProfileNames({}); return; }
+        const map = await WorkOrderService.getProfileNamesByIds(ids);
+        setProfileNames(map);
+      } catch (err) {
+        console.warn('Dashboard: failed to fetch profile names', err);
+        setProfileNames({});
+      }
+    };
+    fetchProfiles();
   }, [workOrders]);
 
   // Get today's work orders and next job (prefer non-completed)
@@ -340,6 +359,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
                           <span className="truncate">
                             {locationNames[workOrder.location_id] || workOrder.location_id || 'Location not specified'}
                           </span>
+                        </div>
+                        {/* People line */}
+                        <div className="mt-1 text-xs text-gray-600 flex flex-wrap gap-x-4 gap-y-1">
+                          <span><span className="text-gray-500">Req:</span> {profileNames[workOrder.requested_by || ''] || workOrder.requested_by || 'N/A'}</span>
+                          <span><span className="text-gray-500">Asg:</span> {profileNames[(workOrder.assigned_to || (workOrder as any).assignedTo) as string] || workOrder.assigned_to || (workOrder as any).assignedTo || 'Unassigned'}</span>
                         </div>
                       </div>
                       <div className="flex items-center text-sm text-gray-500 ml-2">
