@@ -52,15 +52,15 @@ export const Header: React.FC<HeaderProps> = ({
                 <img 
                   src={greetingPhoto} 
                   alt={greetingName}
-                  className={`w-10 h-10 rounded-full object-cover ${isPlain ? '' : 'ring-2 ring-white/20'}`}
+                  className={`w-[3.25rem] h-[3.25rem] rounded-full object-cover ${isPlain ? '' : 'ring-2 ring-white/20'}`}
                 />
               ) : (
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isPlain ? 'bg-blue-100' : 'bg-white/20'}`}>
-                  <UserIcon className={`w-5 h-5 ${isPlain ? 'text-blue-600' : 'text-white'}`} />
+                <div className={`w-[3.25rem] h-[3.25rem] rounded-full flex items-center justify-center ${isPlain ? 'bg-blue-100' : 'bg-white/20'}`}>
+                  <UserIcon className={`w-[1.625rem] h-[1.625rem] ${isPlain ? 'text-blue-600' : 'text-white'}`} />
                 </div>
               )}
               <div className="leading-tight">
-                <p className={`text-base font-semibold truncate ${primaryText}`}>Good {getTimeOfDay()} {greetingName}</p>
+                <p className={`text-[1.3rem] font-semibold truncate ${primaryText}`}>Good {getTimeOfDay()} {greetingName}</p>
                 <p className={`text-xs ${subtleText}`}>
                   {new Date().toLocaleDateString('en-US', {
                     weekday: 'long',
