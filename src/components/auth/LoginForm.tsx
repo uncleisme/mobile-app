@@ -47,11 +47,9 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
     }
 
     setLoading(true);
-    console.log('Login form submitted with:', { email, password: '***' });
 
     try {
-      const user = await login(email, password);
-      console.log('Login successful, user:', user);
+      await login(email, password);
       
       // Call success callback after successful login
       onLoginSuccess?.();

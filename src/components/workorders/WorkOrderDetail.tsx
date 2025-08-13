@@ -11,15 +11,19 @@ import { WorkOrderService } from '../../services/WorkOrderService';
 interface WorkOrderDetailProps {
   workOrderId: string;
   onBack: () => void;
+  onCompleteClick?: (workOrderId: string, title?: string) => void;
 }
 
 export const WorkOrderDetail: React.FC<WorkOrderDetailProps> = ({
   workOrderId,
   onBack,
+  onCompleteClick,
 }) => {
   const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [locationName, setLocationName] = useState<string>('');
+  const [requestedByName, setRequestedByName] = useState<string>('');
+  const [assignedToName, setAssignedToName] = useState<string>('');
 
   useEffect(() => {
     const load = async () => {
@@ -34,10 +38,36 @@ export const WorkOrderDetail: React.FC<WorkOrderDetailProps> = ({
         } else {
           setLocationName('');
         }
+        // Resolve profile names for requested_by and assigned_to if present
+        if (workOrderData) {
+          const ids: string[] = [];
+          if (workOrderData.requested_by) ids.push(workOrderData.requested_by);
+          if (workOrderData.assigned_to || workOrderData.assignedTo) ids.push((workOrderData.assigned_to || workOrderData.assignedTo) as string);
+          if (ids.length) {
+            try {
+              const nameMap = await WorkOrderService.getProfileNamesByIds(ids);
+              if (workOrderData.requested_by) setRequestedByName(nameMap[workOrderData.requested_by] || '');
+              const at = (workOrderData.assigned_to || workOrderData.assignedTo) as string | undefined;
+              if (at) setAssignedToName(nameMap[at] || '');
+            } catch (e) {
+              console.warn('Failed to resolve profile names', e);
+              setRequestedByName('');
+              setAssignedToName('');
+            }
+          } else {
+            setRequestedByName('');
+            setAssignedToName('');
+          }
+        } else {
+          setRequestedByName('');
+          setAssignedToName('');
+        }
       } catch (error) {
         console.error('Failed to load work order details:', error);
         setWorkOrder(null);
         setLocationName('');
+        setRequestedByName('');
+        setAssignedToName('');
       } finally {
         setLoading(false);
       }
@@ -136,7 +166,10 @@ export const WorkOrderDetail: React.FC<WorkOrderDetailProps> = ({
     return scheduledDate < today;
   };
 
-  // Completion actions removed; no completion gating required
+  const canComplete = () => {
+    const s = (workOrder?.status || '').toLowerCase();
+    return !(s.includes('complete') || s.includes('done') || s.includes('closed') || s.includes('review'));
+  };
 
   const getBodyBgClass = () => {
     const s = (workOrder.status || '').toLowerCase().replace(/\s+/g, '_');
@@ -160,6 +193,13 @@ export const WorkOrderDetail: React.FC<WorkOrderDetailProps> = ({
           <div className="flex-1">
             <h1 className="text-lg font-semibold text-gray-900">Work Order Details</h1>
           </div>
+          {canComplete() && (
+            <Button
+              onClick={() => onCompleteClick?.(String(workOrder?.id || workOrder?.work_order_id), workOrder?.title)}
+            >
+              Complete
+            </Button>
+          )}
         </div>
       </div>
 
@@ -216,12 +256,12 @@ export const WorkOrderDetail: React.FC<WorkOrderDetailProps> = ({
             <div className="flex items-center gap-2">
               <User2 size={16} className="text-gray-400" />
               <span className="text-gray-600">Requested By:</span>
-              <span className="font-medium">{workOrder.requested_by || 'N/A'}</span>
+              <span className="font-medium">{requestedByName || workOrder.requested_by || 'N/A'}</span>
             </div>
             <div className="flex items-center gap-2">
               <User2 size={16} className="text-gray-400" />
               <span className="text-gray-600">Assigned To:</span>
-              <span className="font-medium">{workOrder.assigned_to || workOrder.assignedTo || 'Unassigned'}</span>
+              <span className="font-medium">{assignedToName || workOrder.assigned_to || workOrder.assignedTo || 'Unassigned'}</span>
             </div>
           </div>
         </Card>
@@ -236,7 +276,6 @@ export const WorkOrderDetail: React.FC<WorkOrderDetailProps> = ({
           </div>
         </Card>
 
-        {/* Actions removed per request */}
       </div>
     </div>
   );

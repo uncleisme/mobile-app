@@ -27,14 +27,11 @@ export const useAuth = () => {
   }, []);
 
   const login = async (email: string, password: string) => {
-    console.log('useAuth.login called with:', { email, password: '***' });
     try {
       const user = await AuthService.login(email, password);
-      console.log('AuthService returned user:', user);
       
       // Update state and force re-render
       setUser(user);
-      console.log('User state updated in useAuth, new user:', user);
       
       // Force a small delay to ensure state propagation
       await new Promise(resolve => setTimeout(resolve, 50));
