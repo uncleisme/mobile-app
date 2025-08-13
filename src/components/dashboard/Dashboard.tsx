@@ -56,30 +56,34 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick }) => {
   const renderStatusBadge = (status?: string) => {
     const s = (status || '').toLowerCase();
     const base = 'inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full';
-    if (['completed', 'done', 'closed'].includes(s)) {
+    // Review
+    if (['review','in review','in_review','awaiting review','awaiting_review'].includes(s)) {
       return (
-        <span className={`${base} bg-green-100 text-green-700`}>
-          <CheckCircle2 className="w-3.5 h-3.5" /> Completed
+        <span className={`${base} bg-violet-600 text-white`}>
+          <Circle className="w-3.5 h-3.5" /> Review
         </span>
       );
     }
+    // Done
+    if (['completed', 'done', 'closed'].includes(s)) {
+      return (
+        <span className={`${base} bg-green-600 text-white`}>
+          <CheckCircle2 className="w-3.5 h-3.5" /> Done
+        </span>
+      );
+    }
+    // In Progress
     if (['in progress', 'in_progress', 'started', 'working'].includes(s)) {
       return (
-        <span className={`${base} bg-blue-100 text-blue-700`}>
+        <span className={`${base} bg-blue-600 text-white`}>
           <PlayCircle className="w-3.5 h-3.5" /> In Progress
         </span>
       );
     }
-    if (['cancelled', 'canceled'].includes(s)) {
-      return (
-        <span className={`${base} bg-gray-100 text-gray-700`}>
-          <Circle className="w-3.5 h-3.5" /> Cancelled
-        </span>
-      );
-    }
+    // Default Active (includes pending/cancelled/others treated as Active)
     return (
-      <span className={`${base} bg-amber-100 text-amber-700`}>
-        <Circle className="w-3.5 h-3.5" /> Pending
+      <span className={`${base} bg-amber-600 text-white`}>
+        <Circle className="w-3.5 h-3.5" /> Active
       </span>
     );
   };
@@ -146,9 +150,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick }) => {
     fetchLocations();
   }, [workOrders]);
 
-  // Get today's work orders and next job
+  // Get today's work orders and next job (prefer non-completed)
   const todaysWorkOrders = WorkOrderService.getTodaysWorkOrders(workOrders);
-  const nextJob = todaysWorkOrders[0] || workOrders.find(wo => wo.status !== 'completed');
+  const nextJob = (
+    todaysWorkOrders.find(wo => (wo.status || '').toLowerCase() !== 'completed') ||
+    workOrders.find(wo => (wo.status || '').toLowerCase() !== 'completed') ||
+    undefined
+  );
 
   if (loading) {
     return (
@@ -171,98 +179,130 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick }) => {
       <div className="px-4 py-6 max-w-md mx-auto space-y-6">
         {/* Personal Greeting moved into Header */}
 
-        {/* Next Job - Enhanced */}
-        {nextJob && (
-          <Card variant="plain" className="border-l-4 border-blue-500 bg-white ring-1 ring-gray-200 rounded-xl">
-            <div className="flex items-center mb-2">
-              <h2 className="text-lg font-semibold text-gray-900">Next Job</h2>
-              <div className="ml-auto flex items-center gap-2 whitespace-nowrap">
-                {renderStatusBadge(nextJob.status as any)}
-                {renderComplaintBadge(nextJob)}
-                {renderPriorityBadge((nextJob as any).priority)}
-              </div>
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-start gap-3">
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900 truncate">
-                    {formatTime(nextJob.due_date)} – {nextJob.title || 'Untitled Work Order'}
-                  </p>
-                  {(() => {
-                    const wt = ((nextJob as any).work_type || '').toString();
-                    if (!wt) return null;
-                    const isComplaint = wt.toLowerCase().includes('complaint');
-                    if (isComplaint) return null; // do not duplicate complaint tag under title
-                    return (
-                      <div className="mt-1">
-                        <span className="inline-block px-2 py-0.5 text-xs rounded-full bg-purple-100 text-purple-700">
-                          {wt}
-                        </span>
-                      </div>
-                    );
-                  })()}
-                  {nextJob.description && (
-                    <p className="text-sm text-gray-600 mt-1 line-clamp-2">{nextJob.description}</p>
-                  )}
-                  <div className="flex items-center gap-2 mt-2 text-sm text-gray-600">
-                    <div className="flex items-center gap-1">
-                      <MapPin className="w-4 h-4 text-gray-400" />
-                      <span className="truncate">
-                        {locationNames[nextJob.location_id] || nextJob.location_id || 'Location not specified'}
-                      </span>
-                    </div>
-                    {(() => {
-                      const rel = timeUntilDue(nextJob.due_date);
-                      if (!rel) return null;
-                      return (
-                        <>
-                          <span className="text-gray-300">•</span>
-                          <div className="flex items-center gap-1">
-                            <span>{rel}</span>
-                          </div>
-                        </>
-                      );
-                    })()}
+        {/* Next Job - Enhanced with status-based styling */}
+        {(() => {
+          const s = (nextJob?.status || '').toLowerCase();
+          const isDone = ['completed','done','closed'].includes(s) || !nextJob;
+          const cardStyle = (() => {
+            if (isDone) return 'border-l-4 border-gray-400 bg-gray-100 ring-1 ring-gray-200 rounded-xl';
+            if (s.includes('review')) return 'border-l-4 border-violet-600 bg-violet-100 ring-1 ring-violet-200 rounded-xl';
+            if (s.includes('progress')) return 'border-l-4 border-blue-600 bg-blue-100 ring-1 ring-blue-200 rounded-xl';
+            return 'border-l-4 border-amber-600 bg-amber-100 ring-1 ring-amber-200 rounded-xl'; // Active/default
+          })();
+          const primaryBtn = (() => {
+            if (isDone) return null;
+            if (s.includes('review')) {
+              return { label: 'Reviewed', disabled: true, className: 'flex-1 bg-violet-200 text-violet-700 cursor-not-allowed' };
+            }
+            if (s.includes('progress')) {
+              return { label: 'Resume Job', disabled: false, className: 'flex-1 bg-blue-600 hover:bg-blue-700 text-white' };
+            }
+            // Active/default
+            return { label: 'Start Job', disabled: false, className: 'flex-1 bg-amber-600 hover:bg-amber-700 text-white' };
+          })();
+          return (
+            <Card variant="plain" className={`${cardStyle}`}>
+              <div className="flex items-center mb-2">
+                <h2 className="text-lg font-semibold text-gray-900">Next Job</h2>
+                {!isDone && nextJob && (
+                  <div className="ml-auto flex items-center gap-2 whitespace-nowrap">
+                    {renderStatusBadge(nextJob.status as any)}
+                    {renderComplaintBadge(nextJob)}
+                    {renderPriorityBadge((nextJob as any).priority)}
                   </div>
-                </div>
-                {(() => {
-                  const due = new Date(nextJob.due_date as any);
-                  const now = new Date();
-                  const isCompleted = (nextJob.status || '').toLowerCase() === 'completed';
-                  if (!isNaN(due.getTime()) && due < now && !isCompleted) {
-                    return (
-                      <aside className="flex flex-col items-center justify-center ml-2 text-red-600">
-                        <AlertCircle className="w-8 h-8" />
-                        <span className="text-xs font-semibold mt-1">Overdue</span>
-                      </aside>
-                    );
-                  }
-                  return null;
-                })()}
+                )}
               </div>
+              <div className="space-y-3">
+                {isDone || !nextJob ? (
+                  <div className="py-2 text-sm text-gray-600">No job at the moment</div>
+                ) : (
+                  <>
+                    <div className="flex items-start gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900 truncate">
+                          {formatTime(nextJob.due_date)} – {nextJob.title || 'Untitled Work Order'}
+                        </p>
+                        {(() => {
+                          const wt = ((nextJob as any).work_type || '').toString();
+                          if (!wt) return null;
+                          const isComplaint = wt.toLowerCase().includes('complaint');
+                          if (isComplaint) return null; // do not duplicate complaint tag under title
+                          return (
+                            <div className="mt-1">
+                              <span className="inline-block px-2 py-0.5 text-xs rounded-full bg-purple-100 text-purple-700">
+                                {wt}
+                              </span>
+                            </div>
+                          );
+                        })()}
+                        {nextJob.description && (
+                          <p className="text-sm text-gray-600 mt-1 line-clamp-2">{nextJob.description}</p>
+                        )}
+                        <div className="flex items-center gap-2 mt-2 text-sm text-gray-600">
+                          <div className="flex items-center gap-1">
+                            <MapPin className="w-4 h-4 text-gray-400" />
+                            <span className="truncate">
+                              {locationNames[nextJob.location_id] || nextJob.location_id || 'Location not specified'}
+                            </span>
+                          </div>
+                          {(() => {
+                            const rel = timeUntilDue(nextJob.due_date);
+                            if (!rel) return null;
+                            return (
+                              <>
+                                <span className="text-gray-300">•</span>
+                                <div className="flex items-center gap-1">
+                                  <span>{rel}</span>
+                                </div>
+                              </>
+                            );
+                          })()}
+                        </div>
+                      </div>
+                      {(() => {
+                        const due = new Date(nextJob.due_date as any);
+                        const now = new Date();
+                        const isCompleted = (nextJob.status || '').toLowerCase() === 'completed';
+                        if (!isNaN(due.getTime()) && due < now && !isCompleted) {
+                          return (
+                            <aside className="flex flex-col items-center justify-center ml-2 text-red-600">
+                              <AlertCircle className="w-8 h-8" />
+                              <span className="text-xs font-semibold mt-1">Overdue</span>
+                            </aside>
+                          );
+                        }
+                        return null;
+                      })()}
+                    </div>
 
-              {/* Overdue alert removed per requirement */}
-
-              <div className="flex gap-2 pt-1">
-                <Button
-                  onClick={() => nextJob.id && onWorkOrderClick(nextJob.id)}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-                  size="lg"
-                >
-                  Start Job
-                </Button>
-                <Button
-                  onClick={() => nextJob.id && onWorkOrderClick(nextJob.id)}
-                  variant="secondary"
-                  className="flex-1"
-                  size="lg"
-                >
-                  View Details
-                </Button>
+                    {/* Actions */}
+                    <div className="flex gap-2 pt-1">
+                      {primaryBtn && (
+                        <Button
+                          onClick={() => !primaryBtn.disabled && nextJob.id && onWorkOrderClick(nextJob.id)}
+                          className={primaryBtn.className}
+                          size="lg"
+                          disabled={primaryBtn.disabled}
+                        >
+                          {primaryBtn.label}
+                        </Button>
+                      )}
+                      <Button
+                        onClick={() => nextJob.id && onWorkOrderClick(nextJob.id)}
+                        variant="secondary"
+                        className="flex-1"
+                        size="lg"
+                      >
+                        View Details
+                      </Button>
+                    </div>
+                  </>
+                )}
               </div>
-            </div>
-          </Card>
-        )}
+            </Card>
+          );
+        })()}
+        
 
         {/* Today's Work Orders */}
         <Card>
