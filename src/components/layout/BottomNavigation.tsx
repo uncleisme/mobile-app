@@ -19,7 +19,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-transparent px-4 safe-area-pb">
+    <div className="fixed bottom-0 left-0 right-0 bg-white/95 supports-[backdrop-filter]:bg-white/80 backdrop-blur border-t border-gray-200 shadow-sm px-4 safe-area-pb">
       <div className="h-14">
         <NavBarContainer justify="between" className="h-full gap-2">
           {tabs.map((tab) => {
