@@ -11,13 +11,11 @@ import { WorkOrderService } from '../../services/WorkOrderService';
 interface WorkOrderDetailProps {
   workOrderId: string;
   onBack: () => void;
-  onCompleteWorkOrder: (workOrderId: string) => void;
 }
 
 export const WorkOrderDetail: React.FC<WorkOrderDetailProps> = ({
   workOrderId,
   onBack,
-  onCompleteWorkOrder,
 }) => {
   const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
   const [loading, setLoading] = useState(true);
@@ -138,10 +136,7 @@ export const WorkOrderDetail: React.FC<WorkOrderDetailProps> = ({
     return scheduledDate < today;
   };
 
-  // Allow completion for Active (and synonyms), In Progress, and Review
-  const sNorm = (workOrder.status || '').toLowerCase().replace(/\s+/g,'_');
-  const isActiveLike = ['active','pending','new','open','assigned'].includes(sNorm);
-  const canComplete = isActiveLike || ['in_progress','review'].includes(sNorm);
+  // Completion actions removed; no completion gating required
 
   const getBodyBgClass = () => {
     const s = (workOrder.status || '').toLowerCase().replace(/\s+/g, '_');

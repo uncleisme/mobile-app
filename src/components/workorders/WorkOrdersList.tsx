@@ -7,6 +7,7 @@ import { Search, Filter, Clock, MapPin, AlertTriangle, CheckCircle2, PlayCircle,
 
 interface WorkOrdersListProps {
   onWorkOrderClick: (workOrderId: string) => void;
+  refreshKey?: number;
 }
 
 const STATUS_OPTIONS = [
@@ -18,7 +19,7 @@ const STATUS_OPTIONS = [
   { id: 'overdue', label: 'Overdue', icon: AlertTriangle },
 ] as const;
 
-export const WorkOrdersList: React.FC<WorkOrdersListProps> = ({ onWorkOrderClick }) => {
+export const WorkOrdersList: React.FC<WorkOrdersListProps> = ({ onWorkOrderClick, refreshKey }) => {
   const { user } = useAuth();
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,7 +43,7 @@ export const WorkOrdersList: React.FC<WorkOrdersListProps> = ({ onWorkOrderClick
       }
     };
     load();
-  }, [user?.id]);
+  }, [user?.id, refreshKey]);
 
   // Fetch location names based on location_id present in the loaded work orders
   useEffect(() => {

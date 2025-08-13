@@ -11,9 +11,10 @@ import { Activity } from '../activity/Activity';
 
 interface DashboardProps {
   onWorkOrderClick: (workOrderId: string) => void;
+  refreshKey?: number;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshKey }) => {
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
@@ -132,7 +133,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick }) => {
     };
 
     loadWorkOrders();
-  }, [user]);
+  }, [user, refreshKey]);
 
   // Resolve location names for any loaded work orders
   useEffect(() => {

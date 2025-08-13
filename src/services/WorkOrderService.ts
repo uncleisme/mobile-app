@@ -25,7 +25,7 @@ export class WorkOrderService {
     // Normalize to app tokens where possible
     const statusRaw = String(row.status || '').toLowerCase();
     const status =
-      statusRaw.includes('complete') ? 'completed' :
+      (statusRaw.includes('complete') || statusRaw.includes('done') || statusRaw.includes('closed')) ? 'completed' :
       statusRaw.includes('progress') ? 'in_progress' :
       statusRaw.includes('cancel') ? 'cancelled' :
       statusRaw.includes('review') ? 'review' :
