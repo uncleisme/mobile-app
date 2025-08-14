@@ -206,7 +206,7 @@ export const WorkOrdersList: React.FC<WorkOrdersListProps> = ({ onWorkOrderClick
             {filtered.map(wo => (
               <Card
                 key={wo.id}
-                className="hover:shadow-md transition cursor-pointer h-28 overflow-hidden"
+                className="hover:shadow-md transition cursor-pointer h-32 overflow-hidden"
                 onClick={() => wo.id && onWorkOrderClick(wo.id)}
               >
                 <div className="h-full flex flex-col">
