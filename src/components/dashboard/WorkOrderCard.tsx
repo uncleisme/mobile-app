@@ -100,13 +100,13 @@ export const WorkOrderCard: React.FC<WorkOrderCardProps> = ({ workOrder, onClick
   };
 
   return (
-    <Card onClick={onClick} className={`${isOverdue() ? 'border-l-4 border-l-red-500' : ''}`}>
+    <Card onClick={onClick}>
       <div className="space-y-3">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-gray-900 truncate">{workOrder.title}</h3>
-            <p className="text-sm text-gray-600 mt-1 line-clamp-2">{workOrder.description}</p>
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100 truncate">{workOrder.title}</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">{workOrder.description}</p>
           </div>
           <div className="flex flex-col items-end gap-1 ml-3">
             {getStatusBadge()}
@@ -116,7 +116,7 @@ export const WorkOrderCard: React.FC<WorkOrderCardProps> = ({ workOrder, onClick
 
         {/* Asset Info */}
         {asset && (
-          <div className="flex items-center gap-2 text-sm text-gray-600">
+          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
             <MapPin size={16} />
             <span className="truncate">{asset.name} - {asset.location}</span>
           </div>
@@ -124,7 +124,7 @@ export const WorkOrderCard: React.FC<WorkOrderCardProps> = ({ workOrder, onClick
 
         {/* Footer */}
         <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-          <div className="flex items-center gap-2 text-sm text-gray-600">
+          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
             <Calendar size={16} />
             <span>{formatDate(workOrder.scheduledDate ?? workOrder.due_date)}</span>
             {isOverdue() && (
@@ -136,7 +136,7 @@ export const WorkOrderCard: React.FC<WorkOrderCardProps> = ({ workOrder, onClick
           </div>
           
           {workOrder.estimatedHours && (
-            <div className="flex items-center gap-1 text-sm text-gray-500">
+            <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
               <Clock size={14} />
               <span>{workOrder.estimatedHours}h</span>
             </div>

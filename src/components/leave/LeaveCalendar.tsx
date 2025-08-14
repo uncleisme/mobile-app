@@ -120,18 +120,18 @@ export const LeaveCalendar: React.FC = () => {
         <div className="flex items-center justify-between mb-4">
           <button
             onClick={() => navigateMonth('prev')}
-            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800 rounded-lg transition-colors duration-200"
           >
             <ChevronLeft size={20} />
           </button>
           
-          <h2 className="text-lg font-semibold text-gray-900">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
             {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
           </h2>
           
           <button
             onClick={() => navigateMonth('next')}
-            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800 rounded-lg transition-colors duration-200"
           >
             <ChevronRight size={20} />
           </button>
@@ -140,7 +140,7 @@ export const LeaveCalendar: React.FC = () => {
         {/* Day Names */}
         <div className="grid grid-cols-7 gap-1 mb-2">
           {dayNames.map(day => (
-            <div key={day} className="text-center text-xs font-medium text-gray-500 py-2">
+            <div key={day} className="text-center text-xs font-medium text-gray-500 dark:text-gray-400 py-2">
               {day}
             </div>
           ))}
@@ -157,8 +157,8 @@ export const LeaveCalendar: React.FC = () => {
                 key={index}
                 className={`aspect-square flex flex-col items-center justify-center text-sm relative ${
                   date
-                    ? `cursor-pointer hover:bg-gray-50 rounded-lg transition-colors duration-200 ${
-                        isToday(date) ? 'bg-blue-100 text-blue-600 font-semibold' : 'text-gray-900'
+                    ? `cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors duration-200 ${
+                        isToday(date) ? 'bg-blue-100 text-blue-600 font-semibold' : 'text-gray-900 dark:text-gray-100'
                       }`
                     : ''
                 }`}
@@ -180,18 +180,18 @@ export const LeaveCalendar: React.FC = () => {
       {/* Leave List */}
       <div className="space-y-4">
         <div className="flex items-center gap-2">
-          <Users size={20} className="text-gray-600" />
-          <h3 className="text-lg font-semibold text-gray-900">Team Leave Schedule</h3>
+          <Users size={20} className="text-gray-600 dark:text-gray-400" />
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Team Leave Schedule</h3>
         </div>
 
         {calendarData.length === 0 ? (
           <Card>
             <div className="text-center py-8">
-              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+              <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-3">
                 <Users className="w-6 h-6 text-gray-400" />
               </div>
-              <h4 className="font-medium text-gray-900 mb-1">No Leave Scheduled</h4>
-              <p className="text-sm text-gray-500">No team members have approved leave requests.</p>
+              <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-1">No Leave Scheduled</h4>
+              <p className="text-sm text-gray-500 dark:text-gray-400">No team members have approved leave requests.</p>
             </div>
           </Card>
         ) : (
@@ -206,14 +206,14 @@ export const LeaveCalendar: React.FC = () => {
               <Card key={data.date.toISOString()}>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <h4 className="font-medium text-gray-900">
+                    <h4 className="font-medium text-gray-900 dark:text-gray-100">
                       {data.date.toLocaleDateString('en-US', {
                         weekday: 'long',
                         month: 'short',
                         day: 'numeric',
                       })}
                     </h4>
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
                       {data.users.length} person{data.users.length > 1 ? 's' : ''}
                     </span>
                   </div>
@@ -221,7 +221,7 @@ export const LeaveCalendar: React.FC = () => {
                   <div className="space-y-2">
                     {data.users.map((user) => (
                       <div key={`${user.id}-${data.date.toISOString()}`} className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
+                        <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex-shrink-0">
                           {user.profilePhoto ? (
                             <img
                               src={user.profilePhoto}
@@ -235,8 +235,8 @@ export const LeaveCalendar: React.FC = () => {
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-gray-900 truncate">{user.name}</p>
-                          <p className="text-sm text-gray-500">{user.role}</p>
+                          <p className="font-medium text-gray-900 dark:text-gray-100 truncate">{user.name}</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">{user.role}</p>
                         </div>
                         {getLeaveTypeBadge(user.leaveType)}
                       </div>

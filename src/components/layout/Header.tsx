@@ -39,10 +39,10 @@ export const Header: React.FC<HeaderProps> = ({
   const headerClass = isPlain
     ? 'bg-transparent px-4 py-3 safe-area-pt'
     : 'bg-gradient-to-r from-brand-600 to-brand-500 px-4 py-3 safe-area-pt shadow';
-  const primaryText = isPlain ? 'text-gray-900' : 'text-white';
-  const subtleText = isPlain ? 'text-gray-500' : 'text-white/80';
+  const primaryText = isPlain ? 'text-gray-900 dark:text-gray-100' : 'text-white';
+  const subtleText = isPlain ? 'text-gray-500 dark:text-gray-400' : 'text-white/80';
   const notifBtn = isPlain
-    ? 'p-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100'
+    ? 'p-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800'
     : 'p-2 text-white/90 hover:text-white hover:bg-white/10';
 
   // Notifications dropdown state + outside click handler
@@ -71,13 +71,13 @@ export const Header: React.FC<HeaderProps> = ({
                   className={`w-[3.25rem] h-[3.25rem] rounded-full object-cover ${isPlain ? '' : 'ring-2 ring-white/20'}`}
                 />
               ) : (
-                <div className={`w-[3.25rem] h-[3.25rem] rounded-full flex items-center justify-center ${isPlain ? 'bg-blue-100' : 'bg-white/20'}`}>
-                  <UserIcon className={`w-[1.625rem] h-[1.625rem] ${isPlain ? 'text-blue-600' : 'text-white'}`} />
+                <div className={`w-[3.25rem] h-[3.25rem] rounded-full flex items-center justify-center ${isPlain ? 'bg-blue-100 dark:bg-gray-800' : 'bg-white/20'}`}>
+                  <UserIcon className={`w-[1.625rem] h-[1.625rem] ${isPlain ? 'text-blue-600 dark:text-gray-200' : 'text-white'}`} />
                 </div>
               )}
               <div className="leading-tight">
-                <p className={`text-[1.3rem] font-semibold truncate ${primaryText}`}>Good {getTimeOfDay()} {greetingName}</p>
-                <p className={`text-xs ${subtleText}`}>
+                <p className={`text-[1.3rem] font-semibold truncate ${primaryText} dark:text-gray-100`}>Good {getTimeOfDay()} {greetingName}</p>
+                <p className={`text-xs ${subtleText} dark:text-gray-400`}>
                   {new Date().toLocaleDateString('en-US', {
                     weekday: 'long',
                     year: 'numeric',
@@ -101,20 +101,20 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={() => setOpen(o => !o)}
               aria-label="Open notifications"
             >
-              <Bell size={20} />
-              {notificationCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                  {notificationCount > 9 ? '9+' : notificationCount}
-                </span>
-              )}
+              <span className="relative inline-block">
+                <Bell size={20} />
+                {notificationCount > 0 && (
+                  <span className="absolute top-0 right-0 translate-x-1/4 -translate-y-1/4 bg-red-500 rounded-full w-2 h-2 ring-2 ring-white dark:ring-gray-900" />
+                )}
+              </span>
             </button>
             {open && (
-              <div className={`absolute right-0 mt-2 w-[22rem] max-w-[90vw] z-50 ${isPlain ? 'bg-white' : 'bg-white'} shadow-lg rounded-xl ring-1 ring-black/5 overflow-hidden`}>
+              <div className={`absolute right-0 mt-2 w-[22rem] max-w-[90vw] z-50 ${isPlain ? 'bg-white dark:bg-gray-800' : 'bg-white'} shadow-lg rounded-xl ring-1 ring-black/5 overflow-hidden`}>
                 <div className="p-3">
                   <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-sm font-semibold text-gray-900">Today's Work Orders</h4>
+                    <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Today's Work Orders</h4>
                     {notificationCount > 0 && (
-                      <span className="text-xs text-gray-500">{notificationCount}</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">{notificationCount}</span>
                     )}
                   </div>
                   {notificationsContent ? (
@@ -122,7 +122,7 @@ export const Header: React.FC<HeaderProps> = ({
                       {notificationsContent}
                     </div>
                   ) : (
-                    <p className="text-sm text-gray-500 py-2">No work orders scheduled for today</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 py-2">No work orders scheduled for today</p>
                   )}
                 </div>
               </div>

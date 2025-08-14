@@ -41,12 +41,12 @@ export const Activity: React.FC = () => {
 
   const getActionColors = (action?: string) => {
     const a = (action || '').toLowerCase();
-    if (a === 'created' || a === 'create') return { bg: 'bg-emerald-100', fg: 'text-emerald-600' };
-    if (a === 'updated' || a === 'update') return { bg: 'bg-blue-100', fg: 'text-blue-600' };
-    if (a === 'deleted' || a === 'delete') return { bg: 'bg-red-100', fg: 'text-red-600' };
-    if (a === 'review') return { bg: 'bg-violet-100', fg: 'text-violet-600' };
-    if (a === 'completed' || a === 'done') return { bg: 'bg-green-100', fg: 'text-green-600' };
-    return { bg: 'bg-gray-100', fg: 'text-gray-500' };
+    if (a === 'created' || a === 'create') return { bg: 'bg-emerald-800', fg: 'text-white' };
+    if (a === 'updated' || a === 'update') return { bg: 'bg-blue-800', fg: 'text-white' };
+    if (a === 'deleted' || a === 'delete') return { bg: 'bg-red-800', fg: 'text-white' };
+    if (a === 'review') return { bg: 'bg-violet-800', fg: 'text-white' };
+    if (a === 'completed' || a === 'done') return { bg: 'bg-green-800', fg: 'text-white' };
+    return { bg: 'bg-gray-800', fg: 'text-white' };
   };
 
   const fetchActivity = async () => {
@@ -194,7 +194,7 @@ export const Activity: React.FC = () => {
   return (
     <Card>
       <div className="flex items-center justify-between mb-3">
-        <h3 className="font-medium text-gray-900">Activity</h3>
+        <h3 className="font-medium text-gray-900 dark:text-gray-100">Activity</h3>
       </div>
 
       <div
@@ -205,24 +205,24 @@ export const Activity: React.FC = () => {
         className="-mx-1 px-1"
       >
         {loading ? (
-          <div className="py-6 text-sm text-gray-500">Loading...</div>
+          <div className="py-6 text-sm text-gray-500 dark:text-gray-400">Loading...</div>
         ) : error ? (
           <div className="py-4 text-sm text-red-600">{error}</div>
         ) : items.length === 0 ? (
-          <div className="py-4 text-sm text-gray-500">No recent activity</div>
+          <div className="py-4 text-sm text-gray-500 dark:text-gray-400">No recent activity</div>
         ) : (
           <ul className="space-y-3">
             {items.map((n) => {
               const colors = getActionColors(n.action || undefined);
               return (
-              <li key={n.id} className="p-3 bg-gray-50 rounded-lg">
+              <li key={n.id} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                 <div className="flex items-start justify-between gap-3">
-                  <div className={`w-9 h-9 rounded-full ${colors.bg} flex items-center justify-center flex-shrink-0`}>
+                  <div className={`w-9 h-9 rounded-full ${colors.bg} flex items-center justify-center flex-shrink-0 ring-1 ring-black/5` }>
                     <Bell className={`w-4 h-4 ${colors.fg}`} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-gray-900 line-clamp-2">{n.message || n.module || 'Notification'}</p>
-                    <p className="text-xs text-gray-400 mt-1">{n.module || 'Notification'}</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 line-clamp-2">{n.message || n.module || 'Notification'}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-400 mt-1">{n.module || 'Notification'}</p>
                   </div>
                   <span className="text-[11px] text-gray-400 whitespace-nowrap ml-2">{timeAgo(n.created_at)}</span>
                 </div>

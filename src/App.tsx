@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { LoginForm } from './components/auth/LoginForm';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { Dashboard } from './components/dashboard/Dashboard';
@@ -23,6 +23,16 @@ function AppContent() {
   const [selectedWorkOrderId, setSelectedWorkOrderId] = useState<string>('');
   const [selectedWorkOrderTitle, setSelectedWorkOrderTitle] = useState<string>('');
   const [refreshKey, setRefreshKey] = useState<number>(0);
+
+  // Initialize theme (dark/light) on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const isDark = saved ? saved === 'dark' : prefersDark;
+      document.documentElement.classList.toggle('dark', isDark);
+    } catch {}
+  }, []);
 
   const handleWorkOrderClick = (workOrderId: string) => {
     setSelectedWorkOrderId(workOrderId);
@@ -120,7 +130,7 @@ function AppContent() {
     <ProtectedRoute
       fallback={<LoginForm onLoginSuccess={handleLoginSuccess} />}
     >
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 dark:text-gray-100">
         {renderMainContent()}
         
         {shouldShowBottomNav && (

@@ -79,11 +79,11 @@ export const LeaveRequestsList: React.FC = () => {
     <div className="px-4 py-6 max-w-md mx-auto space-y-4">
       {requests.length === 0 ? (
         <div className="text-center py-12">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
             <Calendar className="w-8 h-8 text-gray-400" />
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No Leave Requests</h3>
-          <p className="text-gray-500">You haven't submitted any leave requests yet.</p>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No Leave Requests</h3>
+          <p className="text-gray-500 dark:text-gray-400">You haven't submitted any leave requests yet.</p>
         </div>
       ) : (
         requests.map((request) => (
@@ -91,15 +91,15 @@ export const LeaveRequestsList: React.FC = () => {
             <div className="space-y-3">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900">
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100">
                     {getLeaveTypeLabel(request.type)}
                   </h3>
-                  <p className="text-sm text-gray-600 mt-1">{request.reason}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{request.reason}</p>
                 </div>
                 {getStatusBadge(request.status)}
               </div>
 
-              <div className="flex items-center gap-4 text-sm text-gray-600">
+              <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
                 <div className="flex items-center gap-1">
                   <Calendar size={14} />
                   <span>
@@ -112,7 +112,7 @@ export const LeaveRequestsList: React.FC = () => {
                 </div>
               </div>
 
-              <div className="pt-2 border-t border-gray-100 text-xs text-gray-500">
+              <div className="pt-2 border-t border-gray-100 dark:border-gray-800 text-xs text-gray-500 dark:text-gray-400">
                 <p>Requested on {formatDate(request.requestedAt)}</p>
                 {request.approvedAt && (
                   <p>Approved on {formatDate(request.approvedAt)}</p>

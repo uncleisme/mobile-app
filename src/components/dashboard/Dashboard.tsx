@@ -61,7 +61,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
     // Review
     if (['review','in review','in_review','awaiting review','awaiting_review'].includes(s)) {
       return (
-        <span className={`${base} bg-violet-600 text-white`}>
+        <span className={`${base} bg-violet-800 text-white`}>
           <Circle className="w-3.5 h-3.5" /> Review
         </span>
       );
@@ -69,7 +69,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
     // Done
     if (['completed', 'done', 'closed'].includes(s)) {
       return (
-        <span className={`${base} bg-green-600 text-white`}>
+        <span className={`${base} bg-green-800 text-white`}>
           <CheckCircle2 className="w-3.5 h-3.5" /> Done
         </span>
       );
@@ -77,14 +77,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
     // In Progress
     if (['in progress', 'in_progress', 'started', 'working'].includes(s)) {
       return (
-        <span className={`${base} bg-blue-600 text-white`}>
+        <span className={`${base} bg-blue-800 text-white`}>
           <PlayCircle className="w-3.5 h-3.5" /> In Progress
         </span>
       );
     }
     // Default Active (includes pending/cancelled/others treated as Active)
     return (
-      <span className={`${base} bg-amber-600 text-white`}>
+      <span className={`${base} bg-amber-900 text-amber-100`}>
         <Circle className="w-3.5 h-3.5" /> Active
       </span>
     );
@@ -98,7 +98,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
     if (p === 'critical') return <span className={`${base} bg-red-100 text-red-700`}>Critical</span>;
     if (p === 'high') return <span className={`${base} bg-orange-100 text-orange-700`}>High</span>;
     if (p === 'medium') return <span className={`${base} bg-yellow-100 text-yellow-800`}>Medium</span>;
-    return <span className={`${base} bg-gray-100 text-gray-700`}>Low</span>;
+    return <span className={`${base} bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300`}>Low</span>;
   };
 
   // Complaint badge if work order is a complaint
@@ -216,7 +216,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 dark:text-gray-100 pb-20">
       <Header 
         title="Dashboard" 
         notificationCount={todaysWorkOrders.length}
@@ -281,15 +281,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
         {(() => {
           const s = (nextJob?.status || '').toLowerCase();
           const isDone = ['completed','done','closed'].includes(s) || !nextJob;
-          const cardStyle = (() => {
-            // Solid color backgrounds (no gradient)
-            if (isDone) return 'border-l-4 border-gray-400 bg-gray-100 ring-1 ring-gray-200 rounded-xl';
-            if (s.includes('review')) return 'border-l-4 border-violet-600 bg-violet-100 ring-1 ring-violet-200 rounded-xl';
-            if (s.includes('progress')) return 'border-l-4 border-blue-600 bg-blue-100 ring-1 ring-blue-200 rounded-xl';
-            // Active/default: dark violet shade (900)
-            return 'border-l-4 border-violet-900 bg-violet-900 ring-1 ring-violet-900/30 rounded-xl';
-          })();
-          const isActiveDark = !isDone && !s.includes('review') && !s.includes('progress');
+          // Use neutral Card surface; avoid colored card backgrounds.
+          // was used for colored cards; no longer needed
+          // const isActiveDark = false;
           const primaryBtn = (() => {
             if (isDone) return null;
             if (s.includes('review')) {
@@ -302,9 +296,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
             return { label: 'Start Job', disabled: false, className: 'flex-1 bg-amber-600 hover:bg-amber-700 text-white' };
           })();
           return (
-            <Card variant="plain" className={`${cardStyle}`}>
+            <Card>
               <div className="flex items-center mb-2">
-                <h2 className={`text-lg font-semibold ${isActiveDark ? 'text-white' : 'text-gray-900'}`}>Next Job</h2>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Next Job</h2>
                 {!isDone && nextJob && (
                   <div className="ml-auto flex items-center gap-2 whitespace-nowrap">
                     {renderStatusBadge(nextJob.status as any)}
@@ -315,12 +309,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
               </div>
               <div className="space-y-3">
                 {isDone || !nextJob ? (
-                  <div className="py-2 text-sm text-gray-600">No job at the moment</div>
+                  <div className="py-2 text-sm text-gray-600 dark:text-gray-400">No job at the moment</div>
                 ) : (
                   <>
                     <div className="flex items-start gap-3">
                       <div className="flex-1 min-w-0">
-                        <p className={`font-medium ${isActiveDark ? 'text-white' : 'text-gray-900'} truncate`}>
+                        <p className="font-medium text-gray-900 dark:text-gray-100 truncate">
                           {formatTime(nextJob.due_date)} – {nextJob.title || 'Untitled Work Order'}
                         </p>
                         {(() => {
@@ -337,11 +331,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
                           );
                         })()}
                         {nextJob.description && (
-                          <p className={`text-sm ${isActiveDark ? 'text-white/90' : 'text-gray-600'} mt-1 line-clamp-2`}>{nextJob.description}</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">{nextJob.description}</p>
                         )}
-                        <div className={`flex items-center gap-2 mt-2 text-sm ${isActiveDark ? 'text-white/90' : 'text-gray-600'}`}>
+                        <div className="flex items-center gap-2 mt-2 text-sm text-gray-600 dark:text-gray-400">
                           <div className="flex items-center gap-1">
-                            <MapPin className={`w-4 h-4 ${isActiveDark ? 'text-white/70' : 'text-gray-400'}`} />
+                            <MapPin className="w-4 h-4 text-gray-400 dark:text-gray-400" />
                             <span className="truncate">
                               {locationNames[nextJob.location_id] || nextJob.location_id || 'Location not specified'}
                             </span>
@@ -351,7 +345,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
                             if (!rel) return null;
                             return (
                               <>
-                                <span className={isActiveDark ? 'text-white/50' : 'text-gray-300'}>•</span>
+                                <span className="text-gray-300 dark:text-gray-600">•</span>
                                 <div className="flex items-center gap-1">
                                   <span>{rel}</span>
                                 </div>
@@ -406,18 +400,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
         
         {/* Metrics: Active+Pending, Review, Done */}
         <Card>
-          <div className="grid grid-cols-3 gap-3 place-items-center">
-            <div className="p-3 rounded-lg bg-amber-50 border border-amber-100 text-amber-800 text-center w-full">
-              <div className="text-xs font-medium">Active</div>
-              <div className="mt-1 text-2xl font-bold">{activePendingCount}</div>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 text-center">
+              <div className="text-xs font-medium text-gray-600 dark:text-gray-400">Active</div>
+              <div className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">{activePendingCount}</div>
             </div>
-            <div className="p-3 rounded-lg bg-violet-50 border border-violet-100 text-violet-800 text-center w-full">
-              <div className="text-xs font-medium">Review</div>
-              <div className="mt-1 text-2xl font-bold">{reviewCount}</div>
+            <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 text-center">
+              <div className="text-xs font-medium text-gray-600 dark:text-gray-400">Review</div>
+              <div className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">{reviewCount}</div>
             </div>
-            <div className="p-3 rounded-lg bg-green-50 border border-green-100 text-green-800 text-center w-full">
-              <div className="text-xs font-medium">Done</div>
-              <div className="mt-1 text-2xl font-bold">{doneCount}</div>
+            <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 text-center">
+              <div className="text-xs font-medium text-gray-600 dark:text-gray-400">Done</div>
+              <div className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">{doneCount}</div>
             </div>
           </div>
         </Card>

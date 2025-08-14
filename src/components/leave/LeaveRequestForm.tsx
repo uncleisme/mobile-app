@@ -88,11 +88,11 @@ export const LeaveRequestForm: React.FC<LeaveRequestFormProps> = ({
       <div className="flex items-center gap-3 mb-6">
         <button
           onClick={onBack}
-          className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+          className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800 rounded-lg transition-colors duration-200"
         >
           <ArrowLeft size={20} />
         </button>
-        <h2 className="text-xl font-semibold text-gray-900">Request Leave</h2>
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Request Leave</h2>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">

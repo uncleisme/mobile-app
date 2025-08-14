@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Camera, LogOut, User, Phone, Mail } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Camera, LogOut, User, Phone, Mail, Settings, Moon, Sun } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -16,6 +16,30 @@ export const ProfileSettings: React.FC = () => {
   });
 
   const [uploading, setUploading] = useState(false);
+  const [dark, setDark] = useState<boolean>(false);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const isDark = saved ? saved === 'dark' : prefersDark;
+      setDark(isDark);
+    } catch {}
+  }, []);
+
+  const toggleDark = () => {
+    const next = !dark;
+    setDark(next);
+    try {
+      if (next) {
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('theme', 'light');
+      }
+    } catch {}
+  };
 
   const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
@@ -76,8 +100,37 @@ export const ProfileSettings: React.FC = () => {
   const roleText = role === 'admin' ? 'Admin' : 'Technician';
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
       <div className="px-4 pt-4 pb-6 max-w-md mx-auto space-y-6">
+        {/* Settings / Theme */}
+        <Card variant="plain" className="bg-transparent shadow-none border-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Settings className="text-gray-500 dark:text-gray-300" size={18} />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Settings</h3>
+            </div>
+          </div>
+
+          <div className="mt-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {dark ? (
+                <Moon size={18} className="text-gray-500 dark:text-gray-300" />
+              ) : (
+                <Sun size={18} className="text-gray-500" />
+              )}
+              <span className="text-sm text-gray-700 dark:text-gray-300">Dark Mode</span>
+            </div>
+            <button
+              onClick={toggleDark}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${dark ? 'bg-blue-600' : 'bg-gray-300'}`}
+              aria-label="Toggle dark mode"
+            >
+              <span
+                className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${dark ? 'translate-x-5' : 'translate-x-1'}`}
+              />
+            </button>
+          </div>
+        </Card>
         {/* Profile Photo */}
         <Card variant="plain" className="text-center bg-transparent bg-none shadow-none border-0">
           <div className="relative inline-block">
@@ -108,7 +161,7 @@ export const ProfileSettings: React.FC = () => {
             </label>
           </div>
           
-          <h2 className="text-xl font-semibold text-gray-900">{user.name}</h2>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{user.name}</h2>
           <div className="mt-1">
             <span className={`inline-block px-2.5 py-0.5 text-xs rounded-full ${roleStyles}`}>
               {roleText}
@@ -119,7 +172,7 @@ export const ProfileSettings: React.FC = () => {
         {/* Profile Information */}
         <Card variant="plain" className="bg-transparent bg-none shadow-none border-0">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Personal Information</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Personal Information</h3>
             {!editing && (
               <Button
                 variant="secondary"
@@ -173,24 +226,24 @@ export const ProfileSettings: React.FC = () => {
                 <div className="flex items-center gap-3 py-2">
                   <User className="text-gray-400" size={20} />
                   <div>
-                    <p className="text-sm text-gray-600">Full Name</p>
-                    <p className="font-medium">{user.name}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Full Name</p>
+                    <p className="font-medium text-gray-900 dark:text-gray-100">{user.name}</p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3 py-2">
                   <Mail className="text-gray-400" size={20} />
                   <div>
-                    <p className="text-sm text-gray-600">Email</p>
-                    <p className="font-medium">{user.email}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Email</p>
+                    <p className="font-medium text-gray-900 dark:text-gray-100">{user.email}</p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3 py-2">
                   <Phone className="text-gray-400" size={20} />
                   <div>
-                    <p className="text-sm text-gray-600">Phone Number</p>
-                    <p className="font-medium">{user.phoneNumber || 'Not provided'}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Phone Number</p>
+                    <p className="font-medium text-gray-900 dark:text-gray-100">{user.phoneNumber || 'Not provided'}</p>
                   </div>
                 </div>
               </>
@@ -200,7 +253,7 @@ export const ProfileSettings: React.FC = () => {
 
         {/* Account Actions */}
         <Card variant="plain" className="bg-transparent shadow-none border-0">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Account</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Account</h3>
           
           <Button
             variant="danger"

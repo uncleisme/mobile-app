@@ -42,7 +42,7 @@ export const LeaveManagement: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 pt-2">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 dark:text-gray-100 pb-20 pt-2">
       
       {!showRequestForm && (
         <>
