@@ -24,6 +24,7 @@ export const WorkOrderDetail: React.FC<WorkOrderDetailProps> = ({
   const [locationName, setLocationName] = useState<string>('');
   const [requestedByName, setRequestedByName] = useState<string>('');
   const [assignedToName, setAssignedToName] = useState<string>('');
+  const [showFullDesc, setShowFullDesc] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -204,74 +205,94 @@ export const WorkOrderDetail: React.FC<WorkOrderDetailProps> = ({
       </div>
 
       <div className="px-4 py-6 max-w-md mx-auto space-y-6">
-        {/* 1st card: status pills (work_type, status, priority, overdue) */
-        }
-        <Card>
-          <div className="flex flex-wrap items-center gap-2">
-            {getWorkTypeBadge()}
-            {getStatusBadge()}
-            {getPriorityBadge()}
-            {isOverdue() && (
-              <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full bg-red-100 text-red-700">
-                <AlertTriangle size={14} /> Overdue
-              </span>
-            )}
-          </div>
-        </Card>
-
-        {/* 2nd card: title and dates */}
-        <Card>
-          <div className="space-y-2">
-            <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
-              {(workOrder.work_order_id || workOrder.id) + ' | ' + (workOrder.title || 'Untitled Work Order')}
-            </h2>
-            <div className="grid grid-cols-1 gap-2 text-sm text-gray-700 dark:text-gray-300">
-              {workOrder.created_date && (
-                <div className="flex items-center gap-2">
-                  <Calendar size={16} className="text-gray-400" />
-                  <span className="text-gray-600 dark:text-gray-400">Created:</span>
-                  <span className="font-medium text-gray-900 dark:text-gray-100">{formatDate(workOrder.created_date)}</span>
-                </div>
-              )}
-              <div className="flex items-center gap-2">
-                <Calendar size={16} className="text-gray-400" />
-                <span className="text-gray-600 dark:text-gray-400">Due:</span>
-                <span className="font-medium text-gray-900 dark:text-gray-100">{formatDate(workOrder.due_date)}</span>
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        {/* 3rd card: description */}
-        <Card>
-          <div>
-            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Description</h3>
-            <p className="text-gray-800 dark:text-gray-100 whitespace-pre-line">{workOrder.description || 'No description provided.'}</p>
-          </div>
-        </Card>
-
-        {/* 4th card: people (requested_by, assigned_to) */}
-        <Card>
-          <div className="grid grid-cols-1 gap-2 text-sm">
-            <div className="flex items-center gap-2">
-              <User2 size={16} className="text-gray-400" />
-              <span className="text-gray-600 dark:text-gray-400">Requested By:</span>
-              <span className="font-medium text-gray-900 dark:text-gray-100">{requestedByName || workOrder.requested_by || 'N/A'}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <User2 size={16} className="text-gray-400" />
-              <span className="text-gray-600 dark:text-gray-400">Assigned To:</span>
-              <span className="font-medium text-gray-900 dark:text-gray-100">{assignedToName || workOrder.assigned_to || workOrder.assignedTo || 'Unassigned'}</span>
-            </div>
-          </div>
-        </Card>
-
-        {/* 5th card: location */}
-        <Card>
-          <div className="flex items-start gap-2 text-sm">
-            <MapPin size={16} className="text-gray-400 mt-0.5" />
+        {/* Single card with grid-based layout */}
+        <Card className="dark:border dark:border-gray-700 dark:rounded-xl dark:p-4">
+          <div className="space-y-4">
+            {/* Heading */}
             <div>
-              <div className="text-gray-900 dark:text-gray-100 font-medium">{locationName || workOrder.location_id || 'N/A'}</div>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                {(workOrder.work_order_id || workOrder.id) + ' | ' + (workOrder.title || 'Untitled Work Order')}
+              </h2>
+            </div>
+
+            {/* Status row */}
+            <div className="flex flex-wrap items-center gap-2">
+              {getWorkTypeBadge()}
+              {getStatusBadge()}
+              {getPriorityBadge()}
+              {isOverdue() && (
+                <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300">
+                  <AlertTriangle size={14} /> Overdue
+                </span>
+              )}
+            </div>
+
+            {/* Grid sections */}
+            <div className="grid grid-cols-1 gap-4 text-sm">
+              {/* Dates */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Calendar size={16} className="text-blue-600 dark:text-blue-400" />
+                  <span className="text-gray-600 dark:text-gray-400">Created:</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">{workOrder.created_date ? formatDate(workOrder.created_date) : '—'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Calendar size={16} className="text-blue-600 dark:text-blue-400" />
+                  <span className="text-gray-600 dark:text-gray-400">Due:</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">{formatDate(workOrder.due_date)}</span>
+                </div>
+              </div>
+
+              {/* People */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <User2 size={16} className="text-amber-600 dark:text-amber-400" />
+                  <span className="text-gray-600 dark:text-gray-400">Requested By:</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">{requestedByName || workOrder.requested_by || 'N/A'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <User2 size={16} className="text-amber-600 dark:text-amber-400" />
+                  <span className="text-gray-600 dark:text-gray-400">Assigned To:</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">{assignedToName || workOrder.assigned_to || workOrder.assignedTo || 'Unassigned'}</span>
+                </div>
+              </div>
+
+              {/* Location */}
+              <div className="flex items-start gap-2">
+                <MapPin size={16} className="text-green-600 dark:text-green-400 mt-0.5" />
+                <div>
+                  <div className="text-gray-900 dark:text-gray-100 font-medium">{locationName || workOrder.location_id || 'N/A'}</div>
+                </div>
+              </div>
+
+              {/* Description with clamp & toggle */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Description</h3>
+                <p
+                  className={`text-gray-800 dark:text-gray-100 whitespace-pre-line text-justify`}
+                  style={
+                    showFullDesc
+                      ? undefined
+                      : {
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                        }
+                  }
+                >
+                  {workOrder.description || 'No description provided.'}
+                </p>
+                {!!(workOrder.description && workOrder.description.length > 140) && (
+                  <button
+                    type="button"
+                    onClick={() => setShowFullDesc(v => !v)}
+                    className="mt-1 text-xs font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                  >
+                    {showFullDesc ? 'See less' : 'See more'}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </Card>

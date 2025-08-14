@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { ArrowLeft, Settings as SettingsIcon, Moon, Sun } from 'lucide-react';
 
@@ -87,7 +86,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onBack }) => {
           </div>
         </div>
 
-        <Card>
+        <div className="bg-transparent rounded-none shadow-none border-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               {dark ? (
@@ -107,7 +106,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onBack }) => {
               />
             </button>
           </div>
-        </Card>
+        </div>
       </div>
     </div>
   );

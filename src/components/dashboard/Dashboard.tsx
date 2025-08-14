@@ -401,17 +401,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
         {/* Metrics: Active+Pending, Review, Done */}
         <Card>
           <div className="grid grid-cols-3 gap-3">
-            <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 text-center">
-              <div className="text-xs font-medium text-gray-600 dark:text-gray-400">Active</div>
-              <div className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">{activePendingCount}</div>
+            {/* Active */}
+            <div className="p-3 rounded-lg bg-amber-600 text-white text-center">
+              <div className="text-xs font-medium text-white/90">Active</div>
+              <div className="mt-1 text-2xl font-bold">{activePendingCount}</div>
             </div>
-            <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 text-center">
-              <div className="text-xs font-medium text-gray-600 dark:text-gray-400">Review</div>
-              <div className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">{reviewCount}</div>
+            {/* Review */}
+            <div className="p-3 rounded-lg bg-violet-700 text-white text-center">
+              <div className="text-xs font-medium text-white/90">Review</div>
+              <div className="mt-1 text-2xl font-bold">{reviewCount}</div>
             </div>
-            <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 text-center">
-              <div className="text-xs font-medium text-gray-600 dark:text-gray-400">Done</div>
-              <div className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">{doneCount}</div>
+            {/* Done */}
+            <div className="p-3 rounded-lg bg-green-600 text-white text-center">
+              <div className="text-xs font-medium text-white/90">Done</div>
+              <div className="mt-1 text-2xl font-bold">{doneCount}</div>
             </div>
           </div>
         </Card>
