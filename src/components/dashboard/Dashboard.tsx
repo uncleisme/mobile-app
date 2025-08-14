@@ -405,7 +405,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
         <Card>
           <div className="grid grid-cols-3 gap-3 place-items-center">
             <div className="p-3 rounded-lg bg-amber-50 border border-amber-100 text-amber-800 text-center w-full">
-              <div className="text-xs font-medium">Active + Pending</div>
+              <div className="text-xs font-medium">Active</div>
               <div className="mt-1 text-2xl font-bold">{activePendingCount}</div>
             </div>
             <div className="p-3 rounded-lg bg-violet-50 border border-violet-100 text-violet-800 text-center w-full">

@@ -64,6 +64,34 @@ export class WorkOrderService {
   }
 
   /**
+   * Create a notification row for the current logged-in user.
+   */
+  private static async createNotification(params: {
+    module: string;
+    action: string;
+    entity_id: string;
+    message: string;
+    recipients?: string[] | null;
+  }): Promise<void> {
+    try {
+      const { data: auth } = await supabase.auth.getUser();
+      const userId = auth?.user?.id || null;
+      const payload: any = {
+        user_id: userId,
+        module: params.module,
+        action: params.action,
+        entity_id: params.entity_id,
+        message: params.message,
+        recipients: params.recipients ?? (userId ? [userId] : null),
+      };
+      const { error } = await supabase.from('notifications').insert([payload]);
+      if (error) throw error;
+    } catch (e) {
+      console.warn('Failed to create notification:', e);
+    }
+  }
+
+  /**
    * Fetch a mapping of profile id -> display name from Supabase 'profiles' table.
    * Prefers 'name' if present, otherwise falls back to 'full_name', then 'email'.
    */
@@ -166,6 +194,54 @@ export class WorkOrderService {
       .update({ status: 'Review', updated_at: new Date().toISOString() })
       .eq('id', workOrderId);
     if (error) throw error;
+
+    // Resolve human-readable work_order_id for nicer message
+    let displayId = workOrderId;
+    try {
+      const { data: woRow, error: woErr } = await supabase
+        .from('work_orders')
+        .select('work_order_id')
+        .eq('id', workOrderId)
+        .maybeSingle();
+      if (!woErr && woRow?.work_order_id) displayId = String(woRow.work_order_id);
+    } catch {}
+
+    // Create notification for Review submission
+    await this.createNotification({
+      module: 'Work Orders',
+      action: 'review',
+      entity_id: workOrderId,
+      message: `Work order "${displayId}" submitted for review`,
+    });
+  }
+
+  /**
+   * Mark work order as Completed/Done, and create a notification.
+   */
+  static async markWorkOrderDone(workOrderId: string): Promise<void> {
+    const { error } = await supabase
+      .from('work_orders')
+      .update({ status: 'Completed', updated_at: new Date().toISOString() })
+      .eq('id', workOrderId);
+    if (error) throw error;
+
+    // Resolve human-readable work_order_id for nicer message
+    let displayId = workOrderId;
+    try {
+      const { data: woRow, error: woErr } = await supabase
+        .from('work_orders')
+        .select('work_order_id')
+        .eq('id', workOrderId)
+        .maybeSingle();
+      if (!woErr && woRow?.work_order_id) displayId = String(woRow.work_order_id);
+    } catch {}
+
+    await this.createNotification({
+      module: 'Work Orders',
+      action: 'completed',
+      entity_id: workOrderId,
+      message: `Work order "${displayId}" marked as done`,
+    });
   }
 
   static async getMaintenanceLogsForWorkOrder(workOrderId: string): Promise<MaintenanceLog[]> {

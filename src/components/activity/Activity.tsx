@@ -9,6 +9,8 @@ interface NotificationItem {
   module?: string | null;
   message?: string | null;
   created_at?: string | null;
+  action?: string | null;
+  entity_id?: string | null;
 }
 
 export const Activity: React.FC = () => {
@@ -37,6 +39,16 @@ export const Activity: React.FC = () => {
     return `${day}d ago`;
   };
 
+  const getActionColors = (action?: string) => {
+    const a = (action || '').toLowerCase();
+    if (a === 'created' || a === 'create') return { bg: 'bg-emerald-100', fg: 'text-emerald-600' };
+    if (a === 'updated' || a === 'update') return { bg: 'bg-blue-100', fg: 'text-blue-600' };
+    if (a === 'deleted' || a === 'delete') return { bg: 'bg-red-100', fg: 'text-red-600' };
+    if (a === 'review') return { bg: 'bg-violet-100', fg: 'text-violet-600' };
+    if (a === 'completed' || a === 'done') return { bg: 'bg-green-100', fg: 'text-green-600' };
+    return { bg: 'bg-gray-100', fg: 'text-gray-500' };
+  };
+
   const fetchActivity = async () => {
     if (!user?.id) { setItems([]); setLoading(false); return; }
     try {
@@ -44,7 +56,7 @@ export const Activity: React.FC = () => {
       // Base query for Work Order module (case-insensitive, allows variants like "Work Order(s)")
       const base = supabase
         .from('notifications')
-        .select('id, module, message, created_at')
+        .select('id, module, action, entity_id, message, created_at')
         .ilike('module', 'work order%')
         .order('created_at', { ascending: false })
         .limit(3);
@@ -78,8 +90,64 @@ export const Activity: React.FC = () => {
         data = res4.data as any[];
       }
 
-      console.warn('Activity fetched count:', data?.length || 0);
-      setItems(Array.isArray(data) ? (data as NotificationItem[]) : []);
+      // Attempt to map any Work Order entity_id (UUID) to its human-readable work_order_id
+      let items: NotificationItem[] = Array.isArray(data) ? (data as NotificationItem[]) : [];
+      try {
+        const rawIds = items.map(i => (i.entity_id || '').trim()).filter(Boolean);
+        const ids = Array.from(new Set(rawIds));
+        if (ids.length) {
+          // 1) Map by primary key id
+          const { data: byId, error: errById } = await supabase
+            .from('work_orders')
+            .select('id, work_order_id')
+            .in('id', ids);
+          const map = new Map<string, string>();
+          if (!errById && byId) {
+            (byId as any[]).forEach(r => map.set(String(r.id), String(r.work_order_id || r.id)));
+          }
+
+          // 2) For any that didn't match, attempt to map where entity_id actually stores work_order_id
+          const remaining = ids.filter(id => !map.has(id));
+          if (remaining.length) {
+            const { data: byCode, error: errByCode } = await supabase
+              .from('work_orders')
+              .select('id, work_order_id')
+              .in('work_order_id', remaining as any);
+            if (!errByCode && byCode) {
+              (byCode as any[]).forEach(r => map.set(String(r.work_order_id), String(r.work_order_id)));
+            }
+          }
+
+          // Replace message if it contains raw entity_id or construct nicer fallback
+          items = items.map(n => {
+            const eid = (n.entity_id || '').trim();
+            const humanId = map.get(eid);
+            if (eid && humanId) {
+              let msg = n.message || '';
+              if (msg && msg.includes(eid)) {
+                msg = msg.split(eid).join(humanId);
+              }
+              const looksUuid = /[0-9a-fA-F-]{32,}/.test(msg);
+              if (!msg || looksUuid) {
+                const act = (n.action || '').toLowerCase();
+                if (act === 'review') msg = `Work order "${humanId}" submitted for review`;
+                else if (act === 'completed' || act === 'done') msg = `Work order "${humanId}" marked as done`;
+                else if (act === 'created') msg = `Work order "${humanId}" has been created`;
+                else if (act === 'updated') msg = `Work order "${humanId}" has been updated`;
+                else if (act === 'deleted') msg = `Work order "${humanId}" has been deleted`;
+                else msg = `Work order "${humanId}" notification`;
+              }
+              return { ...n, message: msg };
+            }
+            return n;
+          });
+        }
+      } catch (e) {
+        console.warn('Failed to resolve work_order_id for notifications', e);
+      }
+
+      console.warn('Activity fetched count:', items?.length || 0);
+      setItems(items);
     } catch (e: any) {
       console.warn('Activity fetch failed', e);
       setError('Failed to load activity');
@@ -144,11 +212,13 @@ export const Activity: React.FC = () => {
           <div className="py-4 text-sm text-gray-500">No recent activity</div>
         ) : (
           <ul className="space-y-3">
-            {items.map((n) => (
+            {items.map((n) => {
+              const colors = getActionColors(n.action || undefined);
+              return (
               <li key={n.id} className="p-3 bg-gray-50 rounded-lg">
                 <div className="flex items-start justify-between gap-3">
-                  <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                    <Bell className="w-4 h-4 text-blue-600" />
+                  <div className={`w-9 h-9 rounded-full ${colors.bg} flex items-center justify-center flex-shrink-0`}>
+                    <Bell className={`w-4 h-4 ${colors.fg}`} />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-gray-900 line-clamp-2">{n.message || n.module || 'Notification'}</p>
@@ -157,7 +227,7 @@ export const Activity: React.FC = () => {
                   <span className="text-[11px] text-gray-400 whitespace-nowrap ml-2">{timeAgo(n.created_at)}</span>
                 </div>
               </li>
-            ))}
+            );})}
           </ul>
         )}
         <div className="pt-2 text-center text-[11px] text-gray-400">
