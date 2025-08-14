@@ -202,6 +202,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
     sortForNextJob(workOrders)[0] ||
     undefined
   );
+  // Status metrics
+  const activePendingCount = workOrders.filter(wo => ['pending','in_progress'].includes((wo.status || '').toLowerCase())).length;
+  const reviewCount = workOrders.filter(wo => (wo.status || '').toLowerCase() === 'review').length;
+  const doneCount = workOrders.filter(wo => (wo.status || '').toLowerCase() === 'completed').length;
 
   if (loading) {
     return (
@@ -397,6 +401,24 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
           );
         })()}
         
+        {/* Metrics: Active+Pending, Review, Done */}
+        <Card>
+          <div className="grid grid-cols-3 gap-3 place-items-center">
+            <div className="p-3 rounded-lg bg-amber-50 border border-amber-100 text-amber-800 text-center w-full">
+              <div className="text-xs font-medium">Active + Pending</div>
+              <div className="mt-1 text-2xl font-bold">{activePendingCount}</div>
+            </div>
+            <div className="p-3 rounded-lg bg-violet-50 border border-violet-100 text-violet-800 text-center w-full">
+              <div className="text-xs font-medium">Review</div>
+              <div className="mt-1 text-2xl font-bold">{reviewCount}</div>
+            </div>
+            <div className="p-3 rounded-lg bg-green-50 border border-green-100 text-green-800 text-center w-full">
+              <div className="text-xs font-medium">Done</div>
+              <div className="mt-1 text-2xl font-bold">{doneCount}</div>
+            </div>
+          </div>
+        </Card>
+
 
         {/* Today's Work Orders moved into Header notifications dropdown */}
 
