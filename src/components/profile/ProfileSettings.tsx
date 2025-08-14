@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Camera, LogOut, User, Phone, Mail, Settings, Moon, Sun } from 'lucide-react';
+import { Camera, LogOut, User, Phone, Mail, Settings } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../services/supabaseClient';
 
-export const ProfileSettings: React.FC = () => {
+export const ProfileSettings: React.FC<{ onOpenSettings?: () => void }> = ({ onOpenSettings }) => {
   const { user, logout, updateProfile } = useAuth();
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -16,30 +16,8 @@ export const ProfileSettings: React.FC = () => {
   });
 
   const [uploading, setUploading] = useState(false);
-  const [dark, setDark] = useState<boolean>(false);
 
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('theme');
-      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const isDark = saved ? saved === 'dark' : prefersDark;
-      setDark(isDark);
-    } catch {}
-  }, []);
-
-  const toggleDark = () => {
-    const next = !dark;
-    setDark(next);
-    try {
-      if (next) {
-        document.documentElement.classList.add('dark');
-        localStorage.setItem('theme', 'dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-        localStorage.setItem('theme', 'light');
-      }
-    } catch {}
-  };
+  // Dark mode management is handled in the dedicated Settings page
 
   const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
@@ -102,35 +80,7 @@ export const ProfileSettings: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
       <div className="px-4 pt-4 pb-6 max-w-md mx-auto space-y-6">
-        {/* Settings / Theme */}
-        <Card variant="plain" className="bg-transparent shadow-none border-0">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Settings className="text-gray-500 dark:text-gray-300" size={18} />
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Settings</h3>
-            </div>
-          </div>
-
-          <div className="mt-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              {dark ? (
-                <Moon size={18} className="text-gray-500 dark:text-gray-300" />
-              ) : (
-                <Sun size={18} className="text-gray-500" />
-              )}
-              <span className="text-sm text-gray-700 dark:text-gray-300">Dark Mode</span>
-            </div>
-            <button
-              onClick={toggleDark}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${dark ? 'bg-blue-600' : 'bg-gray-300'}`}
-              aria-label="Toggle dark mode"
-            >
-              <span
-                className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${dark ? 'translate-x-5' : 'translate-x-1'}`}
-              />
-            </button>
-          </div>
-        </Card>
+        {/* Settings/Theme moved to dedicated Settings page */}
         {/* Profile Photo */}
         <Card variant="plain" className="text-center bg-transparent bg-none shadow-none border-0">
           <div className="relative inline-block">
@@ -173,15 +123,28 @@ export const ProfileSettings: React.FC = () => {
         <Card variant="plain" className="bg-transparent bg-none shadow-none border-0">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Personal Information</h3>
-            {!editing && (
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setEditing(true)}
-              >
-                Edit
-              </Button>
-            )}
+            {!editing ? (
+              <div className="flex items-center gap-2">
+                {onOpenSettings && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={onOpenSettings}
+                    className="!p-2"
+                    aria-label="Open settings"
+                  >
+                    <Settings size={16} />
+                  </Button>
+                )}
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setEditing(true)}
+                >
+                  Edit
+                </Button>
+              </div>
+            ) : null}
           </div>
 
           <div className="space-y-4">
@@ -253,8 +216,6 @@ export const ProfileSettings: React.FC = () => {
 
         {/* Account Actions */}
         <Card variant="plain" className="bg-transparent shadow-none border-0">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Account</h3>
-          
           <Button
             variant="danger"
             onClick={logout}

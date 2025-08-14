@@ -6,13 +6,14 @@ import { WorkOrderDetail } from './components/workorders/WorkOrderDetail';
 import { CompleteWorkOrderForm } from './components/workorders/CompleteWorkOrderForm';
 import { WorkOrdersList } from './components/workorders/WorkOrdersList';
 import { ProfileSettings } from './components/profile/ProfileSettings';
+import { SettingsPage } from './components/settings/Settings';
 import { LeaveManagement } from './components/leave/LeaveManagement';
 import { BottomNavigation } from './components/layout/BottomNavigation';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LoadingSpinner } from './components/ui/LoadingSpinner';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
-type AppView = 'dashboard' | 'work-orders' | 'leave' | 'profile';
+type AppView = 'dashboard' | 'work-orders' | 'leave' | 'profile' | 'settings';
 type WorkOrderView = 'list' | 'detail' | 'complete';
 
 // Main App Content Component (wrapped by AuthProvider)
@@ -103,7 +104,9 @@ function AppContent() {
       case 'leave':
         return <LeaveManagement />;
       case 'profile':
-        return <ProfileSettings />;
+        return <ProfileSettings onOpenSettings={() => setActiveTab('settings')} />;
+      case 'settings':
+        return <SettingsPage onBack={() => setActiveTab('profile')} />;
       default:
         return <Dashboard onWorkOrderClick={handleWorkOrderClick} refreshKey={refreshKey} />;
     }
