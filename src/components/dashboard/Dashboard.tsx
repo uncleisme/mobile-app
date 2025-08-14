@@ -282,11 +282,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
           const s = (nextJob?.status || '').toLowerCase();
           const isDone = ['completed','done','closed'].includes(s) || !nextJob;
           const cardStyle = (() => {
+            // Solid color backgrounds (no gradient)
             if (isDone) return 'border-l-4 border-gray-400 bg-gray-100 ring-1 ring-gray-200 rounded-xl';
             if (s.includes('review')) return 'border-l-4 border-violet-600 bg-violet-100 ring-1 ring-violet-200 rounded-xl';
             if (s.includes('progress')) return 'border-l-4 border-blue-600 bg-blue-100 ring-1 ring-blue-200 rounded-xl';
-            return 'border-l-4 border-amber-600 bg-amber-100 ring-1 ring-amber-200 rounded-xl'; // Active/default
+            // Active/default: dark amber shade (800/900)
+            return 'border-l-4 border-amber-900 bg-amber-900 ring-1 ring-amber-900/30 rounded-xl';
           })();
+          const isActiveDark = !isDone && !s.includes('review') && !s.includes('progress');
           const primaryBtn = (() => {
             if (isDone) return null;
             if (s.includes('review')) {
@@ -301,7 +304,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
           return (
             <Card variant="plain" className={`${cardStyle}`}>
               <div className="flex items-center mb-2">
-                <h2 className="text-lg font-semibold text-gray-900">Next Job</h2>
+                <h2 className={`text-lg font-semibold ${isActiveDark ? 'text-white' : 'text-gray-900'}`}>Next Job</h2>
                 {!isDone && nextJob && (
                   <div className="ml-auto flex items-center gap-2 whitespace-nowrap">
                     {renderStatusBadge(nextJob.status as any)}
@@ -317,7 +320,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
                   <>
                     <div className="flex items-start gap-3">
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 truncate">
+                        <p className={`font-medium ${isActiveDark ? 'text-white' : 'text-gray-900'} truncate`}>
                           {formatTime(nextJob.due_date)} – {nextJob.title || 'Untitled Work Order'}
                         </p>
                         {(() => {
@@ -334,11 +337,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
                           );
                         })()}
                         {nextJob.description && (
-                          <p className="text-sm text-gray-600 mt-1 line-clamp-2">{nextJob.description}</p>
+                          <p className={`text-sm ${isActiveDark ? 'text-white/90' : 'text-gray-600'} mt-1 line-clamp-2`}>{nextJob.description}</p>
                         )}
-                        <div className="flex items-center gap-2 mt-2 text-sm text-gray-600">
+                        <div className={`flex items-center gap-2 mt-2 text-sm ${isActiveDark ? 'text-white/90' : 'text-gray-600'}`}>
                           <div className="flex items-center gap-1">
-                            <MapPin className="w-4 h-4 text-gray-400" />
+                            <MapPin className={`w-4 h-4 ${isActiveDark ? 'text-white/70' : 'text-gray-400'}`} />
                             <span className="truncate">
                               {locationNames[nextJob.location_id] || nextJob.location_id || 'Location not specified'}
                             </span>
@@ -348,7 +351,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
                             if (!rel) return null;
                             return (
                               <>
-                                <span className="text-gray-300">•</span>
+                                <span className={isActiveDark ? 'text-white/50' : 'text-gray-300'}>•</span>
                                 <div className="flex items-center gap-1">
                                   <span>{rel}</span>
                                 </div>
