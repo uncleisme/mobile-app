@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, MapPin, Calendar, AlertTriangle, User2 } from 'lucide-react';
 import { Header } from '../layout/Header';
 import { Card } from '../ui/Card';
-import { Badge } from '../ui/Badge';
+import { StatusBadge } from '../ui/StatusBadge';
+import { PriorityBadge } from '../ui/PriorityBadge';
 import { Button } from '../ui/Button';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { WorkOrder } from '../../types';
@@ -103,49 +104,19 @@ export const WorkOrderDetail: React.FC<WorkOrderDetailProps> = ({
     );
   }
 
-  const getStatusBadge = () => {
-    type StatusKey = 'active' | 'in_progress' | 'done' | 'review';
-    // Normalize and map loosely to supported badges
-    const sRaw = (workOrder.status || '').toLowerCase();
-    const normalized = sRaw.replace(/\s+/g, '_');
-    const statusConfig: Record<StatusKey, { variant: 'warning' | 'info' | 'success' | 'default'; label: string }> = {
-      active: { variant: 'warning', label: 'Active' },
-      in_progress: { variant: 'info', label: 'In Progress' },
-      done: { variant: 'success', label: 'Done' },
-      review: { variant: 'info', label: 'Review' },
-    };
-
-    let key: StatusKey = 'active';
-    if ((['active','in_progress','done','review'] as StatusKey[]).includes(normalized as StatusKey)) {
-      key = normalized as StatusKey;
-    } else if (sRaw.includes('progress')) key = 'in_progress';
-    else if (sRaw.includes('complete') || sRaw.includes('done') || sRaw.includes('closed')) key = 'done';
-    else if (sRaw.includes('review')) key = 'review';
-
-    const config = statusConfig[key];
-    return <Badge variant={config.variant}>{config.label}</Badge>;
-  };
+  // Deprecated: local status badge helper removed in favor of shared <StatusBadge />
 
   const getWorkTypeBadge = () => {
     const wt = (workOrder.work_type || workOrder.job_type || '').trim();
     if (!wt) return null;
-    return <Badge variant="default">{wt}</Badge>;
+    return (
+      <span className="inline-block px-2 py-0.5 text-xs rounded-full bg-purple-100 text-purple-700">
+        {wt}
+      </span>
+    );
   };
 
-  const getPriorityBadge = () => {
-    // Normalize priority and provide safe default
-    const pRaw = (workOrder.priority || '').toLowerCase();
-    const p = pRaw.includes('crit') ? 'critical' : pRaw.includes('high') ? 'high' : pRaw.includes('low') ? 'low' : 'medium';
-    const priorityConfig = {
-      low: { variant: 'default' as const, label: 'Low Priority' },
-      medium: { variant: 'warning' as const, label: 'Medium Priority' },
-      high: { variant: 'danger' as const, label: 'High Priority' },
-      critical: { variant: 'danger' as const, label: 'Critical Priority' },
-    } as const;
-
-    const config = priorityConfig[p as keyof typeof priorityConfig];
-    return <Badge variant={config.variant}>{config.label}</Badge>;
-  };
+  // Deprecated: local priority badge helper removed in favor of shared <PriorityBadge />
 
   const formatDate = (date?: string | Date) => {
     if (!date) return '';
@@ -218,8 +189,8 @@ export const WorkOrderDetail: React.FC<WorkOrderDetailProps> = ({
             {/* Status row */}
             <div className="flex flex-wrap items-center gap-2">
               {getWorkTypeBadge()}
-              {getStatusBadge()}
-              {getPriorityBadge()}
+              <StatusBadge status={workOrder.status} size="sm" />
+              <PriorityBadge priority={(workOrder as any).priority} size="sm" />
               {isOverdue() && (
                 <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300">
                   <AlertTriangle size={14} /> Overdue
