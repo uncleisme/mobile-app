@@ -6,7 +6,7 @@ import { Card } from '../ui/Card';
 import { WorkOrder } from '../../types';
 import { WorkOrderService } from '../../services/WorkOrderService';
 import { useAuth } from '../../contexts/AuthContext';
-import { MapPin, Clock, PlayCircle, CheckCircle2, Circle, AlertCircle } from 'lucide-react';
+import { MapPin, PlayCircle, CheckCircle2, Circle, AlertCircle } from 'lucide-react';
 import { Activity } from '../activity/Activity';
 
 interface DashboardProps {
@@ -219,6 +219,55 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
         greetingName={user?.name?.split(' ')[0] || 'Technician'}
         greetingPhoto={user?.profilePhoto}
         plain
+        notificationsContent={
+          todaysWorkOrders.length > 0 ? (
+            <div className="space-y-2">
+              {todaysWorkOrders.slice(0, 10).map((workOrder) => (
+                workOrder?.id && (
+                  <div 
+                    key={workOrder.id} 
+                    className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors"
+                    onClick={() => onWorkOrderClick(workOrder.id)}
+                  >
+                    <div className="flex items-start">
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          {workOrder.title || 'Untitled Work Order'}
+                        </p>
+                        <div className="mt-1 flex items-center gap-2 flex-wrap">
+                          {renderComplaintBadge(workOrder)}
+                          {renderStatusBadge(workOrder.status as any)}
+                        </div>
+                        {(() => {
+                          const wt = (workOrder.work_type || '').toString();
+                          if (!wt) return null;
+                          if (wt.toLowerCase().includes('complaint')) return null; // avoid duplicate complaint pill
+                          return (
+                            <div className="mt-1">
+                              <span className="inline-block px-2 py-0.5 text-xs rounded-full bg-purple-100 text-purple-700">
+                                {wt}
+                              </span>
+                            </div>
+                          );
+                        })()}
+                        <div className="flex items-center text-sm text-gray-500 mt-1">
+                          <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
+                          <span className="truncate">
+                            {locationNames[workOrder.location_id] || workOrder.location_id || 'Location not specified'}
+                          </span>
+                        </div>
+                        <div className="mt-1 text-xs text-gray-600 flex flex-wrap gap-x-4 gap-y-1">
+                          <span><span className="text-gray-500">Req:</span> {profileNames[workOrder.requested_by || ''] || workOrder.requested_by || 'N/A'}</span>
+                          <span><span className="text-gray-500">Asg:</span> {profileNames[(workOrder.assigned_to || (workOrder as any).assignedTo) as string] || workOrder.assigned_to || (workOrder as any).assignedTo || 'Unassigned'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )
+              ))}
+            </div>
+          ) : null
+        }
       />
       
       <div className="px-4 py-6 max-w-md mx-auto space-y-6">
@@ -349,61 +398,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
         })()}
         
 
-        {/* Today's Work Orders */}
-        <Card>
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-medium text-gray-900">Today's Work Orders</h3>
-            <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-              {todaysWorkOrders.length}
-            </span>
-          </div>
-          
-          {todaysWorkOrders.length > 0 ? (
-            <div className="space-y-3">
-              {todaysWorkOrders.slice(0, 3).map((workOrder) => (
-                workOrder?.id && (
-                  <div 
-                    key={workOrder.id} 
-                    className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors"
-                    onClick={() => onWorkOrderClick(workOrder.id)}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-medium text-gray-900">
-                          {workOrder.title || 'Untitled Work Order'}
-                        </p>
-                        {workOrder.work_type ? (
-                          <div className="mt-1">
-                            <span className="inline-block px-2 py-0.5 text-xs rounded-full bg-purple-100 text-purple-700">
-                              {workOrder.work_type}
-                            </span>
-                          </div>
-                        ) : null}
-                        <div className="flex items-center text-sm text-gray-500 mt-1">
-                          <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
-                          <span className="truncate">
-                            {locationNames[workOrder.location_id] || workOrder.location_id || 'Location not specified'}
-                          </span>
-                        </div>
-                        {/* People line */}
-                        <div className="mt-1 text-xs text-gray-600 flex flex-wrap gap-x-4 gap-y-1">
-                          <span><span className="text-gray-500">Req:</span> {profileNames[workOrder.requested_by || ''] || workOrder.requested_by || 'N/A'}</span>
-                          <span><span className="text-gray-500">Asg:</span> {profileNames[(workOrder.assigned_to || (workOrder as any).assignedTo) as string] || workOrder.assigned_to || (workOrder as any).assignedTo || 'Unassigned'}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center text-sm text-gray-500 ml-2">
-                        <Clock className="w-4 h-4 mr-1 flex-shrink-0" />
-                        <span>{formatTime(workOrder.due_date)}</span>
-                      </div>
-                    </div>
-                  </div>
-                )
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-gray-500 py-2">No work orders scheduled for today</p>
-          )}
-        </Card>
+        {/* Today's Work Orders moved into Header notifications dropdown */}
 
         {/* Activity (latest notifications) */}
         <Activity />

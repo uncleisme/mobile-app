@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Bell, User as UserIcon } from 'lucide-react';
 import { NavBarContainer } from './NavBarContainer';
 
@@ -13,6 +13,8 @@ interface HeaderProps {
   subContent?: React.ReactNode;
   // Use a transparent/plain header instead of the brand gradient
   plain?: boolean;
+  // Optional: content to show in a dropdown when clicking the bell icon
+  notificationsContent?: React.ReactNode;
 }
 
 export const Header: React.FC<HeaderProps> = ({ 
@@ -22,7 +24,8 @@ export const Header: React.FC<HeaderProps> = ({
   greetingName,
   greetingPhoto,
   subContent,
-  plain
+  plain,
+  notificationsContent
 }) => {
 
   const getTimeOfDay = () => {
@@ -41,6 +44,19 @@ export const Header: React.FC<HeaderProps> = ({
   const notifBtn = isPlain
     ? 'p-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100'
     : 'p-2 text-white/90 hover:text-white hover:bg-white/10';
+
+  // Notifications dropdown state + outside click handler
+  const [open, setOpen] = useState(false);
+  const notifRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const onClickOutside = (e: MouseEvent) => {
+      if (!notifRef.current) return;
+      if (!(e.target instanceof Node)) return;
+      if (!notifRef.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, []);
 
   return (
     <header className={headerClass}>
@@ -79,8 +95,12 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {showNotifications && (
-          <div className="relative">
-            <button className={`${notifBtn} rounded-lg transition-colors duration-200`}>
+          <div className="relative" ref={notifRef}>
+            <button
+              className={`${notifBtn} rounded-lg transition-colors duration-200 relative`}
+              onClick={() => setOpen(o => !o)}
+              aria-label="Open notifications"
+            >
               <Bell size={20} />
               {notificationCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
@@ -88,6 +108,25 @@ export const Header: React.FC<HeaderProps> = ({
                 </span>
               )}
             </button>
+            {open && (
+              <div className={`absolute right-0 mt-2 w-[22rem] max-w-[90vw] z-50 ${isPlain ? 'bg-white' : 'bg-white'} shadow-lg rounded-xl ring-1 ring-black/5 overflow-hidden`}>
+                <div className="p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-sm font-semibold text-gray-900">Today's Work Orders</h4>
+                    {notificationCount > 0 && (
+                      <span className="text-xs text-gray-500">{notificationCount}</span>
+                    )}
+                  </div>
+                  {notificationsContent ? (
+                    <div className="space-y-3 max-h-[60vh] overflow-auto">
+                      {notificationsContent}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500 py-2">No work orders scheduled for today</p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </NavBarContainer>
