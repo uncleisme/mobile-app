@@ -7,6 +7,8 @@ import { WorkOrder } from '../../types';
 import { WorkOrderService } from '../../services/WorkOrderService';
 import { useAuth } from '../../contexts/AuthContext';
 import { MapPin, PlayCircle, CheckCircle2, Circle, AlertCircle } from 'lucide-react';
+import { StatusBadge } from '../ui/StatusBadge';
+import { PriorityBadge } from '../ui/PriorityBadge';
 import { Activity } from '../activity/Activity';
 
 interface DashboardProps {
@@ -296,14 +298,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
             return { label: 'Start Job', disabled: false, className: 'flex-1 bg-amber-600 hover:bg-amber-700 text-white' };
           })();
           return (
-            <Card>
+            <Card className="bg-[url('/light.png')] dark:bg-[url('/night.png')] bg-cover bg-center bg-no-repeat">
               <div className="flex items-center mb-2">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Next Job</h2>
                 {!isDone && nextJob && (
                   <div className="ml-auto flex items-center gap-2 whitespace-nowrap">
-                    {renderStatusBadge(nextJob.status as any)}
+                    <StatusBadge status={nextJob.status as any} size="sm" />
                     {renderComplaintBadge(nextJob)}
-                    {renderPriorityBadge((nextJob as any).priority)}
+                    <PriorityBadge priority={(nextJob as any).priority} size="sm" />
                   </div>
                 )}
               </div>

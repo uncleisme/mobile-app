@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Header } from '../layout/Header';
 import { Card } from '../ui/Card';
 import { Search, Filter, Clock, MapPin, AlertTriangle, CheckCircle2, PlayCircle, Circle, Eye } from 'lucide-react';
+import { StatusBadge } from '../ui/StatusBadge';
 
 interface WorkOrdersListProps {
   onWorkOrderClick: (workOrderId: string) => void;
@@ -122,26 +123,7 @@ export const WorkOrdersList: React.FC<WorkOrdersListProps> = ({ onWorkOrderClick
     try { return new Date(d).toLocaleString(); } catch { return ''; }
   };
 
-  const statusBadge = (wo: WorkOrder) => {
-    const s = (wo.status || '').toLowerCase();
-    // Explicit statuses take precedence over overdue
-    if (['done','completed','closed'].includes(s)) return (
-      <span className="px-2 py-0.5 text-xs rounded-full bg-green-800 text-white">Done</span>
-    );
-    if (['review','in review','in_review','awaiting review','awaiting_review'].includes(s)) return (
-      <span className="px-2 py-0.5 text-xs rounded-full bg-violet-800 text-white">Review</span>
-    );
-    if (['in progress','in_progress','started','working'].includes(s)) return (
-      <span className="px-2 py-0.5 text-xs rounded-full bg-blue-800 text-white">In Progress</span>
-    );
-    // Overdue if no explicit status above
-    const due = new Date(wo.due_date);
-    const today = new Date(); today.setHours(0,0,0,0);
-    if (due < today) return (
-      <span className="px-2 py-0.5 text-xs rounded-full bg-red-800 text-white">Overdue</span>
-    );
-    return <span className="px-2 py-0.5 text-xs rounded-full bg-amber-900 text-amber-100">Active</span>;
-  };
+  // Status pill rendering handled by shared component
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 dark:text-gray-100 pb-20">
@@ -206,7 +188,7 @@ export const WorkOrdersList: React.FC<WorkOrdersListProps> = ({ onWorkOrderClick
             {filtered.map(wo => (
               <Card
                 key={wo.id}
-                className="hover:shadow-md transition cursor-pointer h-28 overflow-hidden"
+                className="hover:shadow-md transition cursor-pointer h-32 overflow-hidden"
                 onClick={() => wo.id && onWorkOrderClick(wo.id)}
               >
                 <div className="h-full flex flex-col">
@@ -221,7 +203,7 @@ export const WorkOrdersList: React.FC<WorkOrdersListProps> = ({ onWorkOrderClick
                         </div>
                       ) : null}
                     </div>
-                    {statusBadge(wo)}
+                    <StatusBadge status={wo.status} size="sm" />
                   </div>
 
                   <div className="mt-auto">
