@@ -206,33 +206,36 @@ export const WorkOrdersList: React.FC<WorkOrdersListProps> = ({ onWorkOrderClick
             {filtered.map(wo => (
               <Card
                 key={wo.id}
-                className="hover:shadow-md transition cursor-pointer"
+                className="hover:shadow-md transition cursor-pointer h-28 overflow-hidden"
                 onClick={() => wo.id && onWorkOrderClick(wo.id)}
               >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-gray-100">{wo.title || 'Untitled Work Order'}</h3>
-                    {wo.work_type ? (
-                      <div className="mt-1">
-                        <span className="inline-block px-2 py-0.5 text-xs rounded-full bg-purple-100 text-purple-700">
-                          {wo.work_type}
-                        </span>
-                      </div>
-                    ) : null}
-                    <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">{wo.description || 'No description'}</p>
+                <div className="h-full flex flex-col">
+                  <div className="flex justify-between items-start">
+                    <div className="min-w-0">
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 truncate">{wo.title || 'Untitled Work Order'}</h3>
+                      {wo.work_type ? (
+                        <div className="mt-1">
+                          <span className="inline-block px-2 py-0.5 text-xs rounded-full bg-purple-100 text-purple-700">
+                            {wo.work_type}
+                          </span>
+                        </div>
+                      ) : null}
+                    </div>
+                    {statusBadge(wo)}
                   </div>
-                  {statusBadge(wo)}
-                </div>
 
-                <div className="mt-3 flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
-                  <div className="flex items-center gap-1"><Clock size={16} className="text-gray-400" /> {formatDate(wo.due_date)}</div>
-                  <div className="flex items-center gap-1"><MapPin size={16} className="text-gray-400" /> {locationNames[wo.location_id] || wo.location_id || 'N/A'}</div>
-                </div>
+                  <div className="mt-auto">
+                    <div className="mt-3 flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                      <div className="flex items-center gap-1"><Clock size={16} className="text-gray-400" /> {formatDate(wo.due_date)}</div>
+                      <div className="flex items-center gap-1"><MapPin size={16} className="text-gray-400" /> {locationNames[wo.location_id] || wo.location_id || 'N/A'}</div>
+                    </div>
 
-                {/* People line: show requested_by and assigned_to using resolved names */}
-                <div className="mt-2 text-xs text-gray-600 dark:text-gray-400 flex flex-wrap gap-x-4 gap-y-1">
-                  <span><span className="text-gray-500 dark:text-gray-400">Req:</span> {profileNames[wo.requested_by || ''] || wo.requested_by || 'N/A'}</span>
-                  <span><span className="text-gray-500 dark:text-gray-400">Asg:</span> {profileNames[(wo.assigned_to || wo.assignedTo) as string] || wo.assigned_to || wo.assignedTo || 'Unassigned'}</span>
+                    {/* People line: show requested_by and assigned_to using resolved names */}
+                    <div className="mt-2 text-xs text-gray-600 dark:text-gray-400 flex flex-wrap gap-x-4 gap-y-1">
+                      <span><span className="text-gray-500 dark:text-gray-400">Req:</span> {profileNames[wo.requested_by || ''] || wo.requested_by || 'N/A'}</span>
+                      <span><span className="text-gray-500 dark:text-gray-400">Asg:</span> {profileNames[(wo.assigned_to || wo.assignedTo) as string] || wo.assigned_to || wo.assignedTo || 'Unassigned'}</span>
+                    </div>
+                  </div>
                 </div>
               </Card>
             ))}
