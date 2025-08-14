@@ -24,11 +24,11 @@ export const Card: React.FC<CardProps> = ({
   const baseClasses =
     variant === 'plain'
       ? `rounded-xl ${paddingClasses[padding]} bg-transparent shadow-none border-0`
-      : `rounded-xl border ${paddingClasses[padding]} bg-gradient-to-br from-brand-50/50 to-white shadow-sm border-brand-100`;
+      : `rounded-xl border ${paddingClasses[padding]} bg-white shadow-sm border-gray-200`;
   const interactiveClasses = onClick
     ? (variant === 'plain'
         ? 'cursor-pointer transition duration-200 active:scale-[0.98]'
-        : 'cursor-pointer hover:shadow-md hover:border-brand-200 transition duration-200 active:scale-[0.98]')
+        : 'cursor-pointer hover:shadow-md hover:border-gray-300 transition duration-200 active:scale-[0.98]')
     : '';
 
   return (
