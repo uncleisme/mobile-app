@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Bell } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { supabase } from '../../services/supabaseClient';
+import { WorkOrderService } from '../../services/WorkOrderService';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface NotificationItem {
@@ -16,6 +17,7 @@ export const Activity: React.FC = () => {
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [woRequesterNames, setWoRequesterNames] = useState<Record<string, string>>({}); // woId -> full_name
 
   const pulling = useRef(false);
   const startY = useRef(0);
@@ -91,6 +93,78 @@ export const Activity: React.FC = () => {
 
   useEffect(() => { fetchActivity(); }, [user?.id]);
 
+  // Resolve requesters' full names for any WO IDs found in the items' messages
+  useEffect(() => {
+    const resolveRequesters = async () => {
+      try {
+        const woIds = Array.from(
+          new Set(
+            items
+              .map((n) => parseWorkOrderInfo(n.message).woId)
+              .filter((v): v is string => Boolean(v))
+          )
+        );
+        if (woIds.length === 0) return;
+
+        // Fetch requested_by for those WOs
+        const { data, error } = await supabase
+          .from('work_orders')
+          .select('work_order_id, requested_by')
+          .in('work_order_id', woIds);
+        if (error) throw error;
+
+        const requesterIds = Array.from(
+          new Set(
+            (data || [])
+              .map((row: any) => row?.requested_by)
+              .filter((v: any) => Boolean(v))
+              .map((v: any) => String(v))
+          )
+        );
+
+        const idToName = await WorkOrderService.getProfileNamesByIds(requesterIds);
+
+        const map: Record<string, string> = {};
+        (data || []).forEach((row: any) => {
+          const wo = String(row.work_order_id);
+          const pid = row?.requested_by ? String(row.requested_by) : '';
+          if (wo && pid && idToName[pid]) map[wo] = idToName[pid];
+        });
+
+        setWoRequesterNames((prev) => ({ ...prev, ...map }));
+      } catch (e) {
+        console.warn('Failed to resolve WO requesters for Activity:', e);
+      }
+    };
+
+    if (items.length > 0) {
+      void resolveRequesters();
+    }
+  }, [items]);
+
+  // Best-effort extraction of WO ID and creator name from message text
+  const parseWorkOrderInfo = (msg?: string | null): { woId?: string; creator?: string } => {
+    if (!msg) return {};
+    const str = String(msg);
+    // Try patterns like: WO-123, WO 123, Work Order 123
+    const woMatch = str.match(/\b(?:WO[-\s]?|Work\s*Order\s*)([A-Za-z0-9_-]+)/i);
+    // Try to capture creator after 'by ' up to punctuation or end
+    const byMatch = str.match(/\bby\s+([^.,;\n]+)\b/i);
+    return {
+      woId: woMatch?.[1]?.trim(),
+      creator: byMatch?.[1]?.trim(),
+    };
+  };
+
+  const renderWOMessage = (n: NotificationItem) => {
+    const base = n.message || n.module || 'Notification';
+    if (/\bby\s+[^.,;\n]+\b/i.test(base)) return base; // already has a creator
+    const { woId } = parseWorkOrderInfo(n.message);
+    const fullName = woId ? woRequesterNames[woId] : undefined;
+    if (fullName) return `${base} by ${fullName}`;
+    return base;
+  };
+
   const onTouchStart: React.TouchEventHandler<HTMLDivElement> = (e) => {
     const atTop = (document.scrollingElement?.scrollTop || window.scrollY || 0) <= 0;
     pulling.current = atTop;
@@ -151,7 +225,7 @@ export const Activity: React.FC = () => {
                     <Bell className="w-4 h-4 text-blue-600" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-gray-900 line-clamp-2">{n.message || n.module || 'Notification'}</p>
+                    <p className="text-sm font-medium text-gray-900 line-clamp-2">{renderWOMessage(n)}</p>
                     <p className="text-xs text-gray-400 mt-1">{n.module || 'Notification'}</p>
                   </div>
                   <span className="text-[11px] text-gray-400 whitespace-nowrap ml-2">{timeAgo(n.created_at)}</span>
