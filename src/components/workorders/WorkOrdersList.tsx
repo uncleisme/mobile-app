@@ -3,6 +3,7 @@ import { WorkOrder } from '../../types';
 import { WorkOrderService } from '../../services/WorkOrderService';
 import { useAuth } from '../../contexts/AuthContext';
 import { Header } from '../layout/Header';
+import { Card } from '../ui/Card';
 import { Search, Filter, Clock, MapPin, AlertTriangle, CheckCircle2, PlayCircle, Circle, Eye } from 'lucide-react';
 
 interface WorkOrdersListProps {
@@ -125,25 +126,25 @@ export const WorkOrdersList: React.FC<WorkOrdersListProps> = ({ onWorkOrderClick
     const s = (wo.status || '').toLowerCase();
     // Explicit statuses take precedence over overdue
     if (['done','completed','closed'].includes(s)) return (
-      <span className="px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-700">Done</span>
+      <span className="px-2 py-0.5 text-xs rounded-full bg-green-800 text-white">Done</span>
     );
     if (['review','in review','in_review','awaiting review','awaiting_review'].includes(s)) return (
-      <span className="px-2 py-0.5 text-xs rounded-full bg-violet-100 text-violet-700">Review</span>
+      <span className="px-2 py-0.5 text-xs rounded-full bg-violet-800 text-white">Review</span>
     );
     if (['in progress','in_progress','started','working'].includes(s)) return (
-      <span className="px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700">In Progress</span>
+      <span className="px-2 py-0.5 text-xs rounded-full bg-blue-800 text-white">In Progress</span>
     );
     // Overdue if no explicit status above
     const due = new Date(wo.due_date);
     const today = new Date(); today.setHours(0,0,0,0);
     if (due < today) return (
-      <span className="px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-700">Overdue</span>
+      <span className="px-2 py-0.5 text-xs rounded-full bg-red-800 text-white">Overdue</span>
     );
-    return <span className="px-2 py-0.5 text-xs rounded-full bg-amber-100 text-amber-700">Active</span>;
+    return <span className="px-2 py-0.5 text-xs rounded-full bg-amber-900 text-amber-100">Active</span>;
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 dark:text-gray-100 pb-20">
       {/* Header with inlined controls; bell removed */}
       <Header 
         title="" 
@@ -151,21 +152,21 @@ export const WorkOrdersList: React.FC<WorkOrdersListProps> = ({ onWorkOrderClick
         plain
         subContent={(
           <div className="flex items-center gap-2">
-            <div className="flex items-center bg-gray-100 rounded-full px-3 py-2 flex-1">
-              <Search size={18} className="text-gray-500 mr-2" />
+            <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-full px-3 py-2 flex-1">
+              <Search size={18} className="text-gray-500 dark:text-gray-400 mr-2" />
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search by title, description or location"
-                className="bg-transparent outline-none placeholder-gray-500 text-gray-900 w-full"
+                className="bg-transparent outline-none placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-gray-100 w-full"
               />
             </div>
-            <div className="bg-gray-100 rounded-full px-3 py-2 flex items-center">
-              <Filter size={18} className="text-gray-500 mr-2" />
+            <div className="bg-gray-100 dark:bg-gray-800 rounded-full px-3 py-2 flex items-center">
+              <Filter size={18} className="text-gray-500 dark:text-gray-400 mr-2" />
               <select
                 value={sort}
                 onChange={(e) => setSort(e.target.value as any)}
-                className="bg-transparent outline-none text-gray-900"
+                className="bg-transparent outline-none text-gray-900 dark:text-gray-100"
               >
                 <option value="due_asc">Due Date ↑</option>
                 <option value="due_desc">Due Date ↓</option>
@@ -185,7 +186,7 @@ export const WorkOrdersList: React.FC<WorkOrdersListProps> = ({ onWorkOrderClick
               <button
                 key={opt.id}
                 onClick={() => setStatus(opt.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm whitespace-nowrap transition-colors ${active ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm whitespace-nowrap transition-colors ${active ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-100' : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'}`}
               >
                 <Icon size={16} /> {opt.label}
               </button>
@@ -197,20 +198,20 @@ export const WorkOrdersList: React.FC<WorkOrdersListProps> = ({ onWorkOrderClick
       {/* List */}
       <div className="px-4 py-4 max-w-md mx-auto">
         {loading ? (
-          <div className="text-center text-gray-500 py-12">Loading work orders…</div>
+          <div className="text-center text-gray-500 dark:text-gray-400 py-12">Loading work orders…</div>
         ) : filtered.length === 0 ? (
-          <div className="text-center text-gray-500 py-12">No work orders found</div>
+          <div className="text-center text-gray-500 dark:text-gray-400 py-12">No work orders found</div>
         ) : (
           <div className="space-y-3">
             {filtered.map(wo => (
-              <div
+              <Card
                 key={wo.id}
-                className="bg-white rounded-xl border shadow-sm p-4 hover:shadow-md transition cursor-pointer"
+                className="hover:shadow-md transition cursor-pointer"
                 onClick={() => wo.id && onWorkOrderClick(wo.id)}
               >
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="font-semibold text-gray-900">{wo.title || 'Untitled Work Order'}</h3>
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100">{wo.title || 'Untitled Work Order'}</h3>
                     {wo.work_type ? (
                       <div className="mt-1">
                         <span className="inline-block px-2 py-0.5 text-xs rounded-full bg-purple-100 text-purple-700">
@@ -218,22 +219,22 @@ export const WorkOrdersList: React.FC<WorkOrdersListProps> = ({ onWorkOrderClick
                         </span>
                       </div>
                     ) : null}
-                    <p className="text-sm text-gray-500 line-clamp-2">{wo.description || 'No description'}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">{wo.description || 'No description'}</p>
                   </div>
                   {statusBadge(wo)}
                 </div>
 
-                <div className="mt-3 flex items-center gap-4 text-sm text-gray-600">
+                <div className="mt-3 flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
                   <div className="flex items-center gap-1"><Clock size={16} className="text-gray-400" /> {formatDate(wo.due_date)}</div>
                   <div className="flex items-center gap-1"><MapPin size={16} className="text-gray-400" /> {locationNames[wo.location_id] || wo.location_id || 'N/A'}</div>
                 </div>
 
                 {/* People line: show requested_by and assigned_to using resolved names */}
-                <div className="mt-2 text-xs text-gray-600 flex flex-wrap gap-x-4 gap-y-1">
-                  <span><span className="text-gray-500">Req:</span> {profileNames[wo.requested_by || ''] || wo.requested_by || 'N/A'}</span>
-                  <span><span className="text-gray-500">Asg:</span> {profileNames[(wo.assigned_to || wo.assignedTo) as string] || wo.assigned_to || wo.assignedTo || 'Unassigned'}</span>
+                <div className="mt-2 text-xs text-gray-600 dark:text-gray-400 flex flex-wrap gap-x-4 gap-y-1">
+                  <span><span className="text-gray-500 dark:text-gray-400">Req:</span> {profileNames[wo.requested_by || ''] || wo.requested_by || 'N/A'}</span>
+                  <span><span className="text-gray-500 dark:text-gray-400">Asg:</span> {profileNames[(wo.assigned_to || wo.assignedTo) as string] || wo.assigned_to || wo.assignedTo || 'Unassigned'}</span>
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
         )}

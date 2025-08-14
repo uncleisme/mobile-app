@@ -78,7 +78,7 @@ export const WorkOrderDetail: React.FC<WorkOrderDetailProps> = ({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 dark:text-gray-100">
         <Header title="Work Order Details" showNotifications={false} plain />
         <div className="flex items-center justify-center pt-20">
           <LoadingSpinner size="lg" />
@@ -89,7 +89,7 @@ export const WorkOrderDetail: React.FC<WorkOrderDetailProps> = ({
 
   if (!workOrder) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 dark:text-gray-100">
         <Header title="Work Order Details" showNotifications={false} plain />
         <div className="px-4 py-6 max-w-md mx-auto">
           <div className="text-center py-12">
@@ -181,17 +181,17 @@ export const WorkOrderDetail: React.FC<WorkOrderDetailProps> = ({
   };
 
   return (
-    <div className={`min-h-screen ${getBodyBgClass()} pb-20`}>
+    <div className={`min-h-screen ${getBodyBgClass()} dark:bg-gray-900 dark:text-gray-100 pb-20`}>
       <div className="px-4 py-3 safe-area-pt">
         <div className="flex items-center gap-3 max-w-md mx-auto">
           <button
             onClick={onBack}
-            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800 rounded-lg transition-colors duration-200"
           >
             <ArrowLeft size={20} />
           </button>
           <div className="flex-1">
-            <h1 className="text-lg font-semibold text-gray-900">Work Order Details</h1>
+            <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Work Order Details</h1>
           </div>
           {canComplete() && (
             <Button
@@ -222,21 +222,21 @@ export const WorkOrderDetail: React.FC<WorkOrderDetailProps> = ({
         {/* 2nd card: title and dates */}
         <Card>
           <div className="space-y-2">
-            <h2 className="text-base font-semibold text-gray-900">
+            <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
               {(workOrder.work_order_id || workOrder.id) + ' | ' + (workOrder.title || 'Untitled Work Order')}
             </h2>
-            <div className="grid grid-cols-1 gap-2 text-sm text-gray-700">
+            <div className="grid grid-cols-1 gap-2 text-sm text-gray-700 dark:text-gray-300">
               {workOrder.created_date && (
                 <div className="flex items-center gap-2">
                   <Calendar size={16} className="text-gray-400" />
-                  <span className="text-gray-600">Created:</span>
-                  <span className="font-medium">{formatDate(workOrder.created_date)}</span>
+                  <span className="text-gray-600 dark:text-gray-400">Created:</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">{formatDate(workOrder.created_date)}</span>
                 </div>
               )}
               <div className="flex items-center gap-2">
                 <Calendar size={16} className="text-gray-400" />
-                <span className="text-gray-600">Due:</span>
-                <span className="font-medium">{formatDate(workOrder.due_date)}</span>
+                <span className="text-gray-600 dark:text-gray-400">Due:</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100">{formatDate(workOrder.due_date)}</span>
               </div>
             </div>
           </div>
@@ -245,8 +245,8 @@ export const WorkOrderDetail: React.FC<WorkOrderDetailProps> = ({
         {/* 3rd card: description */}
         <Card>
           <div>
-            <h3 className="text-sm font-medium text-gray-600 mb-1">Description</h3>
-            <p className="text-gray-800 whitespace-pre-line">{workOrder.description || 'No description provided.'}</p>
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Description</h3>
+            <p className="text-gray-800 dark:text-gray-100 whitespace-pre-line">{workOrder.description || 'No description provided.'}</p>
           </div>
         </Card>
 
@@ -255,13 +255,13 @@ export const WorkOrderDetail: React.FC<WorkOrderDetailProps> = ({
           <div className="grid grid-cols-1 gap-2 text-sm">
             <div className="flex items-center gap-2">
               <User2 size={16} className="text-gray-400" />
-              <span className="text-gray-600">Requested By:</span>
-              <span className="font-medium">{requestedByName || workOrder.requested_by || 'N/A'}</span>
+              <span className="text-gray-600 dark:text-gray-400">Requested By:</span>
+              <span className="font-medium text-gray-900 dark:text-gray-100">{requestedByName || workOrder.requested_by || 'N/A'}</span>
             </div>
             <div className="flex items-center gap-2">
               <User2 size={16} className="text-gray-400" />
-              <span className="text-gray-600">Assigned To:</span>
-              <span className="font-medium">{assignedToName || workOrder.assigned_to || workOrder.assignedTo || 'Unassigned'}</span>
+              <span className="text-gray-600 dark:text-gray-400">Assigned To:</span>
+              <span className="font-medium text-gray-900 dark:text-gray-100">{assignedToName || workOrder.assigned_to || workOrder.assignedTo || 'Unassigned'}</span>
             </div>
           </div>
         </Card>
@@ -271,7 +271,7 @@ export const WorkOrderDetail: React.FC<WorkOrderDetailProps> = ({
           <div className="flex items-start gap-2 text-sm">
             <MapPin size={16} className="text-gray-400 mt-0.5" />
             <div>
-              <div className="text-gray-900 font-medium">{locationName || workOrder.location_id || 'N/A'}</div>
+              <div className="text-gray-900 dark:text-gray-100 font-medium">{locationName || workOrder.location_id || 'N/A'}</div>
             </div>
           </div>
         </Card>

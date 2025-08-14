@@ -59,18 +59,18 @@ export const CompleteWorkOrderForm: React.FC<CompleteWorkOrderFormProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 dark:text-gray-100 pb-20">
       <div className="px-4 py-3 safe-area-pt">
         <div className="flex items-center gap-3 max-w-md mx-auto">
           <button
             onClick={onBack}
-            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800 rounded-lg transition-colors duration-200"
           >
             <ArrowLeft size={20} />
           </button>
           <div className="flex-1">
-            <h1 className="text-lg font-semibold text-gray-900">Complete Work Order</h1>
-            <p className="text-sm text-gray-500 truncate">{workOrderTitle}</p>
+            <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Complete Work Order</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{workOrderTitle}</p>
           </div>
         </div>
       </div>
@@ -79,13 +79,13 @@ export const CompleteWorkOrderForm: React.FC<CompleteWorkOrderFormProps> = ({
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Photo Upload */}
           <Card>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Photos (Required)</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Photos (Required)</h3>
             
             <div className="space-y-4">
               {/* Upload Button */}
-              <label className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors duration-200">
+              <label className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg cursor-pointer hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-gray-800 transition-colors duration-200">
                 <Camera size={20} className="text-gray-400" />
-                <span className="text-gray-600">Take Photo or Upload</span>
+                <span className="text-gray-600 dark:text-gray-400">Take Photo or Upload</span>
                 <input
                   type="file"
                   accept="image/*"

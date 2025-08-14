@@ -19,7 +19,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white/95 supports-[backdrop-filter]:bg-white/80 backdrop-blur border-t border-gray-200 shadow-sm px-4 safe-area-pb">
+    <div className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-gray-900/90 supports-[backdrop-filter]:bg-white/80 supports-[backdrop-filter]:dark:bg-gray-900/70 backdrop-blur border-t border-gray-200 dark:border-gray-800 shadow-sm px-4 safe-area-pb">
       <div className="h-14">
         <NavBarContainer justify="between" className="h-full gap-2">
           {tabs.map((tab) => {
@@ -33,7 +33,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
                 className={`relative flex-1 h-full flex flex-col items-center justify-center px-3 rounded-lg transition-colors duration-200 ${
                   isActive 
                     ? 'text-blue-600' 
-                    : 'text-gray-500 hover:text-gray-700'
+                    : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
                 }`}
               >
                 {isActive && (

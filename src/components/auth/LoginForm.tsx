@@ -70,8 +70,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4">
             <Wrench className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">CMMS Technician</h1>
-          <p className="text-gray-600">Sign in to manage your work orders</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">CMMS Technician</h1>
+          <p className="text-gray-600 dark:text-gray-400">Sign in to manage your work orders</p>
         </div>
 
         <Card padding="lg">
@@ -108,7 +108,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-9 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-9 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>

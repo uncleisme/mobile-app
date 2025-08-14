@@ -24,7 +24,7 @@ export const Card: React.FC<CardProps> = ({
   const baseClasses =
     variant === 'plain'
       ? `rounded-xl ${paddingClasses[padding]} bg-transparent shadow-none border-0`
-      : `rounded-xl border ${paddingClasses[padding]} bg-white shadow-sm border-gray-200`;
+      : `rounded-xl border ${paddingClasses[padding]} bg-white dark:bg-gray-800 shadow-sm border-gray-200 dark:border-gray-700`;
   const interactiveClasses = onClick
     ? (variant === 'plain'
         ? 'cursor-pointer transition duration-200 active:scale-[0.98]'

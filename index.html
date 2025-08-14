@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#2563eb" />
+    <meta name="theme-color" content="#f9fafb" />
     <meta name="description" content="CMMS Technician Web App - mobile-first PWA with Supabase auth" />
     <!-- iOS PWA -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -13,6 +13,19 @@
     <title>CMMS Technician Web App</title>
   </head>
   <body>
+    <script>
+      // Apply theme before React mounts to avoid flash and set theme-color
+      (function() {
+        try {
+          var saved = localStorage.getItem('theme');
+          var mql = window.matchMedia('(prefers-color-scheme: dark)');
+          var isDark = saved ? saved === 'dark' : mql.matches;
+          if (isDark) document.documentElement.classList.add('dark');
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', isDark ? '#111827' : '#f9fafb'); // gray-900 / gray-50
+        } catch (e) {}
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
