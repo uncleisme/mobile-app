@@ -36,7 +36,10 @@ export const WorkOrdersList: React.FC<WorkOrdersListProps> = ({ onWorkOrderClick
       if (!user?.id) { setLoading(false); return; }
       try {
         setLoading(true);
-        const orders = await WorkOrderService.getWorkOrdersForTechnician(user.id);
+        const isAdmin = (user as any)?.role === 'admin';
+        const orders = isAdmin
+          ? await WorkOrderService.getAllWorkOrders()
+          : await WorkOrderService.getWorkOrdersForTechnician(user.id);
         setWorkOrders(Array.isArray(orders) ? orders : []);
       } catch (e) {
         console.error('Failed to load work orders:', e);
@@ -46,7 +49,7 @@ export const WorkOrdersList: React.FC<WorkOrdersListProps> = ({ onWorkOrderClick
       }
     };
     load();
-  }, [user?.id, refreshKey]);
+  }, [user?.id, (user as any)?.role, refreshKey]);
 
   // Fetch location names based on location_id present in the loaded work orders
   useEffect(() => {
@@ -129,7 +132,7 @@ export const WorkOrdersList: React.FC<WorkOrdersListProps> = ({ onWorkOrderClick
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 dark:text-gray-100 pb-20">
       {/* Header with inlined controls; bell removed */}
       <Header 
-        title="" 
+        title={(user as any)?.role === 'admin' ? 'All Work Orders' : 'My Work Orders'} 
         showNotifications={false}
         plain
         subContent={(

@@ -8,6 +8,7 @@ import { Button } from '../ui/Button';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { WorkOrder } from '../../types';
 import { WorkOrderService } from '../../services/WorkOrderService';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface WorkOrderDetailProps {
   workOrderId: string;
@@ -26,6 +27,8 @@ export const WorkOrderDetail: React.FC<WorkOrderDetailProps> = ({
   const [requestedByName, setRequestedByName] = useState<string>('');
   const [assignedToName, setAssignedToName] = useState<string>('');
   const [showFullDesc, setShowFullDesc] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => {
     const load = async () => {
@@ -77,6 +80,15 @@ export const WorkOrderDetail: React.FC<WorkOrderDetailProps> = ({
 
     load();
   }, [workOrderId]);
+
+  const reload = async () => {
+    try {
+      const wo = await WorkOrderService.getWorkOrderById(workOrderId);
+      setWorkOrder(wo);
+    } catch (e) {
+      console.error('Failed to refresh work order after action:', e);
+    }
+  };
 
   if (loading) {
     return (
@@ -143,6 +155,39 @@ export const WorkOrderDetail: React.FC<WorkOrderDetailProps> = ({
     return !(s.includes('complete') || s.includes('done') || s.includes('closed') || s.includes('review'));
   };
 
+  const isAdmin = (user as any)?.role === 'admin';
+  const canAdminReview = () => {
+    if (!isAdmin) return false;
+    const s = (workOrder?.status || '').toLowerCase();
+    return s.includes('review');
+  };
+
+  const handleApprove = async () => {
+    if (!workOrder?.id) return;
+    try {
+      setActionLoading(true);
+      await WorkOrderService.reviewWorkOrder(String(workOrder.id), 'approve');
+      await reload();
+    } catch (e) {
+      console.error('Approve failed:', e);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleSendBack = async () => {
+    if (!workOrder?.id) return;
+    try {
+      setActionLoading(true);
+      await WorkOrderService.reviewWorkOrder(String(workOrder.id), 'reject');
+      await reload();
+    } catch (e) {
+      console.error('Send back failed:', e);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const getBodyBgClass = () => {
     const s = (workOrder.status || '').toLowerCase().replace(/\s+/g, '_');
     if (isOverdue() && s !== 'done') return 'bg-rose-50';
@@ -176,6 +221,18 @@ export const WorkOrderDetail: React.FC<WorkOrderDetailProps> = ({
       </div>
 
       <div className="px-4 py-6 max-w-md mx-auto space-y-6">
+        {/* Admin review actions */}
+        {canAdminReview() && (
+          <Card className="dark:border dark:border-gray-700 dark:rounded-xl">
+            <div className="p-3 flex items-center justify-between gap-2">
+              <div className="text-sm text-gray-700 dark:text-gray-300">This work order is in Review.</div>
+              <div className="flex gap-2">
+                <Button disabled={actionLoading} onClick={handleSendBack} variant="secondary">Send Back</Button>
+                <Button disabled={actionLoading} onClick={handleApprove}>Approve</Button>
+              </div>
+            </div>
+          </Card>
+        )}
         {/* Single card with grid-based layout */}
         <Card className="dark:border dark:border-gray-700 dark:rounded-xl dark:p-4">
           <div className="space-y-4">

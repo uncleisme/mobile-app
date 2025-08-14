@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header } from '../layout/Header';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { Button } from '../ui/Button';
@@ -22,6 +22,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
   const { user } = useAuth();
   const [locationNames, setLocationNames] = useState<Record<string, string>>({});
   const [profileNames, setProfileNames] = useState<Record<string, string>>({});
+  const isAdmin = (user as any)?.role === 'admin';
 
   // Greeting is now rendered in the Header component.
 
@@ -92,16 +93,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
     );
   };
 
-  // Priority badge renderer if available
-  const renderPriorityBadge = (priority?: string) => {
-    if (!priority) return null;
-    const p = priority.toLowerCase();
-    const base = 'inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full';
-    if (p === 'critical') return <span className={`${base} bg-red-100 text-red-700`}>Critical</span>;
-    if (p === 'high') return <span className={`${base} bg-orange-100 text-orange-700`}>High</span>;
-    if (p === 'medium') return <span className={`${base} bg-yellow-100 text-yellow-800`}>Medium</span>;
-    return <span className={`${base} bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300`}>Low</span>;
-  };
 
   // Complaint badge if work order is a complaint
   const renderComplaintBadge = (wo: WorkOrder) => {
@@ -125,7 +116,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
 
       try {
         setLoading(true);
-        const orders = await WorkOrderService.getWorkOrdersForTechnician(user.id);
+        const isAdmin = (user as any)?.role === 'admin';
+        const orders = isAdmin
+          ? await WorkOrderService.getAllWorkOrders()
+          : await WorkOrderService.getWorkOrdersForTechnician(user.id);
         setWorkOrders(Array.isArray(orders) ? orders : []);
       } catch (error) {
         console.error('Failed to load work orders:', error);
@@ -136,7 +130,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
     };
 
     loadWorkOrders();
-  }, [user, refreshKey]);
+  }, [user?.id, (user as any)?.role, refreshKey]);
+
+  const reload = async () => {
+    if (!user?.id) return;
+    try {
+      const orders = isAdmin
+        ? await WorkOrderService.getAllWorkOrders()
+        : await WorkOrderService.getWorkOrdersForTechnician(user.id);
+      setWorkOrders(Array.isArray(orders) ? orders : []);
+    } catch (e) {
+      console.error('Dashboard reload failed:', e);
+    }
+  };
 
   // Resolve location names for any loaded work orders
   useEffect(() => {
@@ -209,6 +215,34 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
   const reviewCount = workOrders.filter(wo => (wo.status || '').toLowerCase() === 'review').length;
   const doneCount = workOrders.filter(wo => (wo.status || '').toLowerCase() === 'completed').length;
 
+  // Admin derived lists
+  const approvalsList = isAdmin
+    ? workOrders.filter(w => (w.status || '').toLowerCase().includes('review'))
+    : [];
+  const unassignedList = isAdmin
+    ? workOrders.filter(w => !(w.assigned_to || (w as any).assignedTo))
+    : [];
+
+  const handleApprove = async (id?: string) => {
+    if (!id) return;
+    try {
+      await WorkOrderService.reviewWorkOrder(id, 'approve');
+      await reload();
+    } catch (e) {
+      console.error('Approve failed:', e);
+    }
+  };
+
+  const handleSendBack = async (id?: string) => {
+    if (!id) return;
+    try {
+      await WorkOrderService.reviewWorkOrder(id, 'reject');
+      await reload();
+    } catch (e) {
+      console.error('Send back failed:', e);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -220,15 +254,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 dark:text-gray-100 pb-20">
       <Header 
-        title="Dashboard" 
-        notificationCount={todaysWorkOrders.length}
-        greetingName={user?.name?.split(' ')[0] || 'Technician'}
+        title={isAdmin ? 'Admin Dashboard' : 'Dashboard'} 
+        notificationCount={isAdmin ? approvalsList.length : todaysWorkOrders.length}
+        greetingName={user?.name?.split(' ')[0] || (isAdmin ? 'Admin' : 'Technician')}
         greetingPhoto={user?.profilePhoto}
         plain
         notificationsContent={
-          todaysWorkOrders.length > 0 ? (
+          (isAdmin ? approvalsList : todaysWorkOrders).length > 0 ? (
             <div className="space-y-2">
-              {todaysWorkOrders.slice(0, 10).map((workOrder) => (
+              {(isAdmin ? approvalsList : todaysWorkOrders).slice(0, 10).map((workOrder) => (
                 workOrder?.id && (
                   <div 
                     key={workOrder.id} 
@@ -277,6 +311,98 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
       />
       
       <div className="px-4 py-6 max-w-md mx-auto space-y-6">
+        {isAdmin ? (
+          <>
+            {/* Approvals Queue */}
+            <Card>
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Approvals Needed</h2>
+                <span className="text-sm text-gray-600 dark:text-gray-400">{approvalsList.length}</span>
+              </div>
+              {approvalsList.length === 0 ? (
+                <div className="text-sm text-gray-600 dark:text-gray-400">No items in review</div>
+              ) : (
+                <div className="space-y-3">
+                  {approvalsList.map(wo => (
+                    <Card key={wo.id} className="p-3">
+                      <div className="flex items-start gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-gray-900 dark:text-gray-100 truncate">{wo.title || 'Untitled Work Order'}</p>
+                            <StatusBadge status={wo.status} size="sm" />
+                          </div>
+                          <div className="mt-1 text-xs text-gray-600 dark:text-gray-400 flex flex-wrap gap-x-4 gap-y-1">
+                            <span><span className="text-gray-500">Req:</span> {profileNames[wo.requested_by || ''] || wo.requested_by || 'N/A'}</span>
+                            <span><span className="text-gray-500">Asg:</span> {profileNames[(wo.assigned_to || (wo as any).assignedTo) as string] || wo.assigned_to || (wo as any).assignedTo || 'Unassigned'}</span>
+                          </div>
+                          <div className="mt-1 text-xs text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                            <MapPin className="w-3.5 h-3.5 text-gray-400" />
+                            <span className="truncate">{locationNames[wo.location_id] || wo.location_id || 'N/A'}</span>
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <Button onClick={() => handleSendBack(wo.id)} variant="secondary" size="sm">Send Back</Button>
+                          <Button onClick={() => handleApprove(wo.id)} size="sm">Approve</Button>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </Card>
+
+            {/* Unassigned */}
+            <Card>
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Unassigned</h2>
+                <span className="text-sm text-gray-600 dark:text-gray-400">{unassignedList.length}</span>
+              </div>
+              {unassignedList.length === 0 ? (
+                <div className="text-sm text-gray-600 dark:text-gray-400">No unassigned work orders</div>
+              ) : (
+                <div className="space-y-3">
+                  {unassignedList.map(wo => (
+                    <Card key={wo.id} className="p-3 cursor-pointer" onClick={() => wo.id && onWorkOrderClick(wo.id)}>
+                      <div className="flex items-start gap-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-gray-900 dark:text-gray-100 truncate">{wo.title || 'Untitled Work Order'}</p>
+                          <div className="mt-1 text-xs text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                            <MapPin className="w-3.5 h-3.5 text-gray-400" />
+                            <span className="truncate">{locationNames[wo.location_id] || wo.location_id || 'N/A'}</span>
+                          </div>
+                        </div>
+                        <div className="shrink-0">
+                          <StatusBadge status={wo.status} size="sm" />
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </Card>
+
+            {/* Admin Metrics */}
+            <Card>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="p-3 rounded-lg bg-amber-600 text-white text-center">
+                  <div className="text-xs font-medium text-white/90">Active</div>
+                  <div className="mt-1 text-2xl font-bold">{activePendingCount}</div>
+                </div>
+                <div className="p-3 rounded-lg bg-violet-700 text-white text-center">
+                  <div className="text-xs font-medium text-white/90">Review</div>
+                  <div className="mt-1 text-2xl font-bold">{approvalsList.length}</div>
+                </div>
+                <div className="p-3 rounded-lg bg-green-600 text-white text-center">
+                  <div className="text-xs font-medium text-white/90">Done</div>
+                  <div className="mt-1 text-2xl font-bold">{doneCount}</div>
+                </div>
+              </div>
+            </Card>
+
+            {/* Activity */}
+            <Activity />
+          </>
+        ) : (<React.Fragment>
         {/* Personal Greeting moved into Header */}
 
         {/* Next Job - Enhanced with status-based styling */}
@@ -400,32 +526,32 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
           );
         })()}
         
-        {/* Metrics: Active+Pending, Review, Done */}
-        <Card>
-          <div className="grid grid-cols-3 gap-3">
-            {/* Active */}
-            <div className="p-3 rounded-lg bg-amber-600 text-white text-center">
-              <div className="text-xs font-medium text-white/90">Active</div>
-              <div className="mt-1 text-2xl font-bold">{activePendingCount}</div>
+          {/* Metrics: Active+Pending, Review, Done */}
+          <Card>
+            <div className="grid grid-cols-3 gap-3">
+              {/* Active */}
+              <div className="p-3 rounded-lg bg-amber-600 text-white text-center">
+                <div className="text-xs font-medium text-white/90">Active</div>
+                <div className="mt-1 text-2xl font-bold">{activePendingCount}</div>
+              </div>
+              {/* Review */}
+              <div className="p-3 rounded-lg bg-violet-700 text-white text-center">
+                <div className="text-xs font-medium text-white/90">Review</div>
+                <div className="mt-1 text-2xl font-bold">{reviewCount}</div>
+              </div>
+              {/* Done */}
+              <div className="p-3 rounded-lg bg-green-600 text-white text-center">
+                <div className="text-xs font-medium text-white/90">Done</div>
+                <div className="mt-1 text-2xl font-bold">{doneCount}</div>
+              </div>
             </div>
-            {/* Review */}
-            <div className="p-3 rounded-lg bg-violet-700 text-white text-center">
-              <div className="text-xs font-medium text-white/90">Review</div>
-              <div className="mt-1 text-2xl font-bold">{reviewCount}</div>
-            </div>
-            {/* Done */}
-            <div className="p-3 rounded-lg bg-green-600 text-white text-center">
-              <div className="text-xs font-medium text-white/90">Done</div>
-              <div className="mt-1 text-2xl font-bold">{doneCount}</div>
-            </div>
-          </div>
-        </Card>
+          </Card>
 
+          {/* Today's Work Orders moved into Header notifications dropdown */}
 
-        {/* Today's Work Orders moved into Header notifications dropdown */}
-
-        {/* Activity (latest notifications) */}
-        <Activity />
+          {/* Activity (latest notifications) */}
+          <Activity />
+        </React.Fragment>)}
       </div>
     </div>
   );
