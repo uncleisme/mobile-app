@@ -286,8 +286,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
             if (isDone) return 'border-l-4 border-gray-400 bg-gray-100 ring-1 ring-gray-200 rounded-xl';
             if (s.includes('review')) return 'border-l-4 border-violet-600 bg-violet-100 ring-1 ring-violet-200 rounded-xl';
             if (s.includes('progress')) return 'border-l-4 border-blue-600 bg-blue-100 ring-1 ring-blue-200 rounded-xl';
-            // Active/default: dark amber shade (800/900)
-            return 'border-l-4 border-amber-900 bg-amber-900 ring-1 ring-amber-900/30 rounded-xl';
+            // Active/default: dark violet shade (900)
+            return 'border-l-4 border-violet-900 bg-violet-900 ring-1 ring-violet-900/30 rounded-xl';
           })();
           const isActiveDark = !isDone && !s.includes('review') && !s.includes('progress');
           const primaryBtn = (() => {
