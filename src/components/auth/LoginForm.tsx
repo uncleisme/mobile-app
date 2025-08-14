@@ -64,13 +64,11 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
   // No demo autofill. Users must enter their credentials.
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-900 dark:text-gray-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4">
-            <Wrench className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">CMMS Technician</h1>
+          <img src="/512.png" alt="App logo" className="w-16 h-16 rounded-2xl mb-4 shadow-sm mx-auto" />
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">MRA CMMS</h1>
           <p className="text-gray-600 dark:text-gray-400">Sign in to manage your work orders</p>
         </div>
 
@@ -122,10 +120,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
             </div>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+              <div className="rounded-lg p-3 border bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800">
                 <div className="flex items-center">
-                  <AlertCircle className="w-4 h-4 text-red-600 mr-2" />
-                  <p className="text-red-600 text-sm">{error}</p>
+                  <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 mr-2" />
+                  <p className="text-red-600 dark:text-red-300 text-sm">{error}</p>
                 </div>
               </div>
             )}
