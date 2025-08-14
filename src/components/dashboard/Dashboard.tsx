@@ -172,9 +172,34 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
 
   // Get today's work orders and next job (prefer non-completed)
   const todaysWorkOrders = WorkOrderService.getTodaysWorkOrders(workOrders);
+  // Helper: rank statuses for Next Job priority
+  const statusRank = (status?: string) => {
+    const s = (status || '').toLowerCase();
+    if (s.includes('progress')) return 0; // in_progress highest
+    if (s.includes('review')) return 3;   // review lower priority
+    if (s.includes('complete') || s.includes('done') || s.includes('closed')) return 4; // lowest
+    // Treat everything else as active/pending
+    return 1;
+  };
+  // Helper: sort candidates by status rank, then createdAt desc ("just created"), then due_date asc
+  const sortForNextJob = (list: WorkOrder[]) => {
+    return [...list].sort((a, b) => {
+      const rA = statusRank(a.status);
+      const rB = statusRank(b.status);
+      if (rA !== rB) return rA - rB;
+      const ca = (a as any).createdAt instanceof Date ? (a as any).createdAt as Date : (a.created_date as any);
+      const cb = (b as any).createdAt instanceof Date ? (b as any).createdAt as Date : (b.created_date as any);
+      const cATime = ca ? new Date(ca).getTime() : 0;
+      const cBTime = cb ? new Date(cb).getTime() : 0;
+      if (cATime !== cBTime) return cBTime - cATime; // newer first
+      const da = a.due_date ? new Date(a.due_date as any).getTime() : Number.MAX_SAFE_INTEGER;
+      const db = b.due_date ? new Date(b.due_date as any).getTime() : Number.MAX_SAFE_INTEGER;
+      return da - db; // earlier due first
+    });
+  };
   const nextJob = (
-    todaysWorkOrders.find(wo => (wo.status || '').toLowerCase() !== 'completed') ||
-    workOrders.find(wo => (wo.status || '').toLowerCase() !== 'completed') ||
+    sortForNextJob(todaysWorkOrders)[0] ||
+    sortForNextJob(workOrders)[0] ||
     undefined
   );
 
