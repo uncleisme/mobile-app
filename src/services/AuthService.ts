@@ -133,8 +133,14 @@ export class AuthService {
       mapped = {
         ...mapped,
         name: profile.full_name || mapped.name,
+        // Preserve role from profiles.type if available; otherwise keep existing role
+        role: (profile.type as User['role']) || (this.currentUser?.role as User['role']) || mapped.role,
         profilePhoto: profile.avatar_url || mapped.profilePhoto,
       };
+    }
+    // If no profile row returned, still preserve previously known role
+    if (!profile && this.currentUser?.role) {
+      mapped = { ...mapped, role: this.currentUser.role };
     }
     this.currentUser = mapped;
     return mapped;
