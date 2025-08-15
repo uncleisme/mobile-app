@@ -212,6 +212,7 @@ export class WorkOrderService {
       .from('work_orders')
       .update({ status: 'Review', updated_at: new Date().toISOString() })
       .eq('id', workOrderId);
+
     if (error) throw error;
 
     // Resolve human-readable work_order_id for nicer message
@@ -240,8 +241,9 @@ export class WorkOrderService {
   static async markWorkOrderDone(workOrderId: string): Promise<void> {
     const { error } = await supabase
       .from('work_orders')
-      .update({ status: 'Completed', updated_at: new Date().toISOString() })
+      .update({ status: 'Done', updated_at: new Date().toISOString() })
       .eq('id', workOrderId);
+
     if (error) throw error;
 
     // Resolve human-readable work_order_id for nicer message
@@ -271,11 +273,12 @@ export class WorkOrderService {
     decision: 'approve' | 'reject',
     options?: { comment?: string }
   ): Promise<void> {
-    const newStatus = decision === 'approve' ? 'Completed' : 'In Progress';
+    const newStatus = decision === 'approve' ? 'Done' : 'In Progress';
     const { error } = await supabase
       .from('work_orders')
       .update({ status: newStatus, updated_at: new Date().toISOString() })
       .eq('id', workOrderId);
+
     if (error) throw error;
 
     // Resolve display work_order_id
@@ -328,7 +331,7 @@ export class WorkOrderService {
     today.setHours(0, 0, 0, 0);
 
     return workOrders.filter(wo => {
-      if (wo.status === 'Completed') return false; // Match your DB status values
+      if ((wo.status || '').toLowerCase() === 'completed') return false; // DB status values are lowercase
       // Use due_date from your database schema
       const scheduledDate = new Date(wo.due_date);
       scheduledDate.setHours(0, 0, 0, 0);
