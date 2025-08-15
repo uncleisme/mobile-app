@@ -419,7 +419,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
             {/* Approvals Queue */}
             <Card>
               <div className="flex items-center justify-between mb-2">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Approvals Needed</h2>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Work Order Approvals</h2>
                 <span className="text-sm text-gray-600 dark:text-gray-400">{approvalsList.length}</span>
               </div>
               {approvalsList.length === 0 ? (
