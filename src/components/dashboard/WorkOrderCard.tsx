@@ -4,6 +4,7 @@ import { Badge } from '../ui/Badge';
 import { Calendar, MapPin, Clock, AlertTriangle } from 'lucide-react';
 import { WorkOrder, Asset } from '../../types';
 import { WorkOrderService } from '../../services/WorkOrderService';
+import { formatDDMMYY } from '../../utils/date';
 
 interface WorkOrderCardProps {
   workOrder: WorkOrder;
@@ -76,27 +77,7 @@ export const WorkOrderCard: React.FC<WorkOrderCardProps> = ({ workOrder, onClick
 
   const formatDate = (date?: Date | string) => {
     if (!date) return '';
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-
-    const dateObj = new Date(date);
-    
-    if (dateObj.toDateString() === today.toDateString()) {
-      return 'Today';
-    } else if (dateObj.toDateString() === tomorrow.toDateString()) {
-      return 'Tomorrow';
-    } else if (dateObj.toDateString() === yesterday.toDateString()) {
-      return 'Yesterday';
-    } else {
-      return dateObj.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric',
-        year: dateObj.getFullYear() !== today.getFullYear() ? 'numeric' : undefined
-      });
-    }
+    return formatDDMMYY(date);
   };
 
   return (

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Bell, User as UserIcon } from 'lucide-react';
 import { NavBarContainer } from './NavBarContainer';
+import { formatLongDate } from '../../utils/date';
 
 interface HeaderProps {
   title: string;
@@ -78,12 +79,7 @@ export const Header: React.FC<HeaderProps> = ({
               <div className="leading-tight">
                 <p className={`text-[1.3rem] font-semibold truncate ${primaryText} dark:text-gray-100`}>Good {getTimeOfDay()} {greetingName}</p>
                 <p className={`text-xs ${subtleText} dark:text-gray-400`}>
-                  {new Date().toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
+                  {formatLongDate(new Date())}
                 </p>
               </div>
             </div>

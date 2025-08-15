@@ -6,6 +6,7 @@ import { Calendar, Clock } from 'lucide-react';
 import { LeaveRequest } from '../../types';
 import { LeaveService } from '../../services/LeaveService';
 import { useAuth } from '../../contexts/AuthContext';
+import { formatDDMMYY } from '../../utils/date';
 
 export const LeaveRequestsList: React.FC = () => {
   const [requests, setRequests] = useState<LeaveRequest[]>([]);
@@ -51,13 +52,7 @@ export const LeaveRequestsList: React.FC = () => {
     return typeLabels[type as keyof typeof typeLabels] || type;
   };
 
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  };
+  const formatDate = (date: Date) => formatDDMMYY(date);
 
   const calculateDays = (startDate: Date, endDate: Date) => {
     const start = new Date(startDate);
