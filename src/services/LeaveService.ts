@@ -10,7 +10,7 @@ export class LeaveService {
       const today = new Date().toISOString().slice(0, 10);
       const { data, error } = await supabase
         .from('leaves')
-        .select('id,user_id,type_key,start_date,end_date,status, profiles:profiles!inner(id,full_name)')
+        .select('id,user_id,type_key,start_date,end_date,status, profiles:profiles!leaves_user_id_fkey(id,full_name)')
         .eq('status', 'approved')
         .lte('start_date', today)
         .gte('end_date', today)
@@ -34,18 +34,39 @@ export class LeaveService {
   // Approval flow over new schema
   static async getPendingLeaves(): Promise<Array<{ id: string; userId: string; fullName: string; role?: string | null; typeKey: string | null; startDate: string; endDate: string; reason: string | null }>> {
     try {
-      const { data, error } = await supabase
+      // Step 1: Fetch leave rows only (avoids RLS issues on joins)
+      const { data: leaves, error: leavesErr } = await supabase
         .from('leaves')
-        .select('id,user_id,type_key,start_date,end_date,status,reason, profiles:profiles(id,full_name,role)')
+        .select('id,user_id,type_key,start_date,end_date,status,reason')
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
-      if (error) throw error;
-      const rows = Array.isArray(data) ? data : [];
+      if (leavesErr) throw leavesErr;
+      const rows = Array.isArray(leaves) ? leaves : [];
+
+      // Step 2: Fetch profiles for user_ids (best-effort)
+      const ids = Array.from(new Set(rows.map((r: any) => String(r.user_id)).filter(Boolean)));
+      let nameMap: Record<string, { full_name?: string }> = {};
+      if (ids.length > 0) {
+        try {
+          const { data: profs, error: profErr } = await supabase
+            .from('profiles')
+            .select('id,full_name')
+            .in('id', ids);
+          if (profErr) throw profErr;
+          (profs || []).forEach((p: any) => {
+            nameMap[String(p.id)] = { full_name: p.full_name };
+          });
+        } catch (e) {
+          // Don't fail the entire response if profiles are blocked by RLS
+          console.warn('Pending leaves: profiles lookup failed (proceeding without names)', e);
+        }
+      }
+
       return rows.map((row: any) => ({
         id: String(row.id),
         userId: String(row.user_id),
-        fullName: String(row.profiles?.full_name || ''),
-        role: row.profiles?.role ?? null,
+        fullName: String(nameMap[String(row.user_id)]?.full_name || ''),
+        role: null,
         typeKey: row.type_key ?? null,
         startDate: String(row.start_date),
         endDate: String(row.end_date),
@@ -90,7 +111,7 @@ export class LeaveService {
       // Overlap: (start_date <= end) AND (end_date >= start)
       const { data, error } = await supabase
         .from('leaves')
-        .select('id,user_id,type_key,start_date,end_date,status, profiles:profiles!inner(id,full_name)')
+        .select('id,user_id,type_key,start_date,end_date,status, profiles:profiles!leaves_user_id_fkey(id,full_name)')
         .eq('status', 'approved')
         .lte('start_date', end)
         .gte('end_date', start)
@@ -249,7 +270,7 @@ export class LeaveService {
         endDate: new Date(data.end_date),
         reason: String(data.reason || ''),
         status: (data.status as LeaveRequest['status']) || 'pending',
-        requestedAt: new Date(data.requested_at || data.created_at || Date.now()),
+        requestedAt: new Date(data.created_at || Date.now()),
         approvedBy: data.approved_by ? String(data.approved_by) : undefined,
         approvedAt: data.approved_at ? new Date(data.approved_at) : undefined,
       } as LeaveRequest;
@@ -263,7 +284,7 @@ export class LeaveService {
     try {
       const { data, error } = await supabase
         .from('leaves')
-        .select('id,user_id,type_key,start_date,end_date,reason,status,approved_by,approved_at,created_at, profiles:profiles!inner(id,full_name,role)')
+        .select('id,user_id,type_key,start_date,end_date,reason,status,approved_by,approved_at,created_at, profiles:profiles!leaves_user_id_fkey(id,full_name,type)')
         .eq('status', 'approved');
       if (error) throw error;
       const rows = Array.isArray(data) ? data : [];
@@ -289,7 +310,7 @@ export class LeaveService {
           id: String(row.user_id),
           email: '',
           name: String(row.profiles?.full_name || ''),
-          role: (row.profiles?.role as User['role']) || 'technician',
+          role: (row.profiles?.type as User['role']) || 'technician',
           createdAt: new Date(),
           // profilePhoto is optional; keep undefined unless you add it to select above
         },

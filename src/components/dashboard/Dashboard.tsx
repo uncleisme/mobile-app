@@ -34,12 +34,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
   const [pendingLeaves, setPendingLeaves] = useState<Array<{ id: string; userId: string; fullName: string; typeKey: string | null; startDate: string; endDate: string; reason: string | null }>>([]);
   const [pendingLoading, setPendingLoading] = useState<boolean>(false);
   // Approvals list with technician-preferred filtering, but falls back to all if none match
-  const { technicianPending, displayPending } = React.useMemo(() => {
+  const { displayPending } = React.useMemo(() => {
     const tech = pendingLeaves.filter((p: any) => {
       const r = (p.role || '').toString().toLowerCase();
       return r === 'technician' || r.includes('tech');
     });
-    return { technicianPending: tech, displayPending: tech.length > 0 ? tech : pendingLeaves };
+    return { displayPending: tech.length > 0 ? tech : pendingLeaves };
   }, [pendingLeaves]);
 
   // Fetch leave data for admin based on date filters
@@ -87,6 +87,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
     loadPending();
     return () => { active = false; };
   }, [isAdmin]);
+
 
   // Manual refresh for approvals list
   const refreshPendingLeaves = async () => {
@@ -475,7 +476,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
                       <div className="flex items-start gap-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <p className="font-medium text-gray-900 dark:text-gray-100 truncate">{lv.fullName}</p>
+                            <p className="font-medium text-gray-900 dark:text-gray-100 truncate">{lv.fullName || lv.userId}</p>
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] rounded-full bg-amber-600 text-white">Pending</span>
                             {lv.role && (
                               <span className="ml-1 inline-flex items-center gap-1 px-2 py-0.5 text-[10px] rounded-full bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300">{(lv.role || '').toString()}</span>
