@@ -96,15 +96,17 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onBack }) => {
               )}
               <span className="text-sm text-gray-700 dark:text-gray-300">Dark Mode</span>
             </div>
-            <button
+            <div
+              role="switch"
+              aria-checked={dark}
               onClick={toggleDark}
-              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${dark ? 'bg-blue-700' : 'bg-gray-300 dark:bg-gray-600'}`}
+              className={`relative inline-flex h-[28px] w-[44px] min-h-[28px] min-w-[44px] rounded-full overflow-hidden p-0.5 transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 appearance-none leading-none select-none [touch-action:manipulation] [-webkit-tap-highlight-color:transparent] [ -webkit-mask-image: -webkit-radial-gradient(white, black) ] shrink-0 flex-none cursor-pointer ${dark ? 'bg-blue-700' : 'bg-gray-300 dark:bg-gray-600'}`}
               aria-label="Toggle dark mode"
             >
               <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white dark:bg-gray-200 shadow ring-1 ring-black/5 dark:ring-white/10 transition-transform ${dark ? 'translate-x-4' : 'translate-x-1'}`}
+                className={`absolute top-0.5 left-0.5 h-[24px] w-[24px] rounded-full bg-white dark:bg-gray-200 shadow ring-1 ring-black/5 dark:ring-white/10 transition-transform will-change-transform ${dark ? 'translate-x-[16px]' : 'translate-x-0'}`}
               />
-            </button>
+            </div>
           </div>
         </div>
       </div>

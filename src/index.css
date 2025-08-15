@@ -178,11 +178,6 @@
     line-height: 1.4;
   }
 
-  /* Better button sizing for touch */
-  button {
-    min-height: 44px;
-  }
-
   /* Improve form input sizing */
   input, select, textarea {
     min-height: 44px;
