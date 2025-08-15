@@ -9,6 +9,7 @@ import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { WorkOrder } from '../../types';
 import { WorkOrderService } from '../../services/WorkOrderService';
 import { useAuth } from '../../contexts/AuthContext';
+import { formatDDMMYY } from '../../utils/date';
 
 interface WorkOrderDetailProps {
   workOrderId: string;
@@ -130,15 +131,7 @@ export const WorkOrderDetail: React.FC<WorkOrderDetailProps> = ({
 
   // Deprecated: local priority badge helper removed in favor of shared <PriorityBadge />
 
-  const formatDate = (date?: string | Date) => {
-    if (!date) return '';
-    return new Date(date).toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
+  const formatDate = (date?: string | Date) => formatDDMMYY(date || undefined);
 
   const isOverdue = () => {
     const today = new Date();

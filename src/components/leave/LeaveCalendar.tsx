@@ -5,6 +5,7 @@ import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { ChevronLeft, ChevronRight, Users } from 'lucide-react';
 import { User } from '../../types';
 import { LeaveService } from '../../services/LeaveService';
+import { formatDDMMYY } from '../../utils/date';
 
 interface LeaveCalendarData {
   date: Date;
@@ -207,12 +208,9 @@ export const LeaveCalendar: React.FC = () => {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <h4 className="font-medium text-gray-900 dark:text-gray-100">
-                      {data.date.toLocaleDateString('en-US', {
-                        weekday: 'long',
-                        month: 'short',
-                        day: 'numeric',
-                      })}
+                      {formatDDMMYY(data.date)}
                     </h4>
+                    
                     <span className="text-sm text-gray-500 dark:text-gray-400">
                       {data.users.length} person{data.users.length > 1 ? 's' : ''}
                     </span>
