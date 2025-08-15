@@ -137,6 +137,25 @@ export class WorkOrderService {
     }
   }
 
+  /**
+   * Fetch all work orders (admin view).
+   */
+  static async getAllWorkOrders(): Promise<WorkOrder[]> {
+    try {
+      const { data, error } = await supabase
+        .from('work_orders')
+        .select(this.baseSelect)
+        .order('due_date', { ascending: true });
+
+      if (error) throw error;
+      const rows = Array.isArray(data) ? data : [];
+      return rows.map(this.mapRowToWorkOrder);
+    } catch (err) {
+      console.warn('Supabase fetch failed for all work orders:', err);
+      return [];
+    }
+  }
+
   static async getWorkOrderById(id: string): Promise<WorkOrder | null> {
     try {
       const { data, error } = await supabase
@@ -241,6 +260,42 @@ export class WorkOrderService {
       action: 'completed',
       entity_id: workOrderId,
       message: `Work order "${displayId}" marked as done`,
+    });
+  }
+
+  /**
+   * Admin review action: approve -> Completed, reject -> In Progress.
+   */
+  static async reviewWorkOrder(
+    workOrderId: string,
+    decision: 'approve' | 'reject',
+    options?: { comment?: string }
+  ): Promise<void> {
+    const newStatus = decision === 'approve' ? 'Completed' : 'In Progress';
+    const { error } = await supabase
+      .from('work_orders')
+      .update({ status: newStatus, updated_at: new Date().toISOString() })
+      .eq('id', workOrderId);
+    if (error) throw error;
+
+    // Resolve display work_order_id
+    let displayId = workOrderId;
+    try {
+      const { data: woRow, error: woErr } = await supabase
+        .from('work_orders')
+        .select('work_order_id')
+        .eq('id', workOrderId)
+        .maybeSingle();
+      if (!woErr && woRow?.work_order_id) displayId = String(woRow.work_order_id);
+    } catch {}
+
+    const action = decision === 'approve' ? 'approved' : 'rejected';
+    const note = options?.comment ? ` Note: ${options.comment}` : '';
+    await this.createNotification({
+      module: 'Work Orders',
+      action,
+      entity_id: workOrderId,
+      message: `Work order "${displayId}" ${action} by admin.${note}`,
     });
   }
 
