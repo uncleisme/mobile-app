@@ -4,24 +4,138 @@ import { supabase } from './supabaseClient';
 export class LeaveService {
   // No local mock state; all data from Supabase
 
-  static async getLeaveRequestsForUser(userId: string): Promise<LeaveRequest[]> {
+  // New lightweight summary type for admin dashboard queries over new schema
+  static async getOnLeaveToday(): Promise<Array<{ id: string; userId: string; fullName: string; typeKey: string | null; startDate: string; endDate: string }>> {
     try {
+      const today = new Date().toISOString().slice(0, 10);
       const { data, error } = await supabase
-        .from('leave_requests')
-        .select('*')
-        .eq('user_id', userId)
-        .order('requested_at', { ascending: false });
+        .from('leaves')
+        .select('id,user_id,type_key,start_date,end_date,status, profiles:profiles!inner(id,full_name)')
+        .eq('status', 'approved')
+        .lte('start_date', today)
+        .gte('end_date', today)
+        .order('start_date', { ascending: true });
       if (error) throw error;
       const rows = Array.isArray(data) ? data : [];
       return rows.map((row: any) => ({
         id: String(row.id),
         userId: String(row.user_id),
-        type: row.type as LeaveRequest['type'],
+        fullName: String(row.profiles?.full_name || ''),
+        typeKey: row.type_key ?? null,
+        startDate: String(row.start_date),
+        endDate: String(row.end_date),
+      }));
+    } catch (err) {
+      console.warn('Failed to fetch on-leave-today:', err);
+      return [];
+    }
+  }
+
+  // Approval flow over new schema
+  static async getPendingLeaves(): Promise<Array<{ id: string; userId: string; fullName: string; role?: string | null; typeKey: string | null; startDate: string; endDate: string; reason: string | null }>> {
+    try {
+      const { data, error } = await supabase
+        .from('leaves')
+        .select('id,user_id,type_key,start_date,end_date,status,reason, profiles:profiles(id,full_name,role)')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      const rows = Array.isArray(data) ? data : [];
+      return rows.map((row: any) => ({
+        id: String(row.id),
+        userId: String(row.user_id),
+        fullName: String(row.profiles?.full_name || ''),
+        role: row.profiles?.role ?? null,
+        typeKey: row.type_key ?? null,
+        startDate: String(row.start_date),
+        endDate: String(row.end_date),
+        reason: row.reason ?? null,
+      }));
+    } catch (err) {
+      console.warn('Failed to fetch pending leaves:', err);
+      return [];
+    }
+  }
+
+  static async approveLeave(id: string, adminId: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('leaves')
+        .update({ status: 'approved', approved_by: adminId, approved_at: new Date().toISOString() })
+        .eq('id', id);
+      if (error) throw error;
+      return true;
+    } catch (err) {
+      console.error('Approve leave failed:', err);
+      return false;
+    }
+  }
+
+  static async rejectLeave(id: string, adminId: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('leaves')
+        .update({ status: 'rejected', approved_by: adminId, approved_at: new Date().toISOString() })
+        .eq('id', id);
+      if (error) throw error;
+      return true;
+    } catch (err) {
+      console.error('Reject leave failed:', err);
+      return false;
+    }
+  }
+
+  static async getOnLeaveInRange(start: string, end: string): Promise<Array<{ id: string; userId: string; fullName: string; typeKey: string | null; startDate: string; endDate: string }>> {
+    try {
+      // Overlap: (start_date <= end) AND (end_date >= start)
+      const { data, error } = await supabase
+        .from('leaves')
+        .select('id,user_id,type_key,start_date,end_date,status, profiles:profiles!inner(id,full_name)')
+        .eq('status', 'approved')
+        .lte('start_date', end)
+        .gte('end_date', start)
+        .order('start_date', { ascending: true });
+      if (error) throw error;
+      const rows = Array.isArray(data) ? data : [];
+      return rows.map((row: any) => ({
+        id: String(row.id),
+        userId: String(row.user_id),
+        fullName: String(row.profiles?.full_name || ''),
+        typeKey: row.type_key ?? null,
+        startDate: String(row.start_date),
+        endDate: String(row.end_date),
+      }));
+    } catch (err) {
+      console.warn('Failed to fetch on-leave-in-range:', err);
+      return [];
+    }
+  }
+
+  static async getLeaveRequestsForUser(userId: string): Promise<LeaveRequest[]> {
+    try {
+      const { data, error } = await supabase
+        .from('leaves')
+        .select('id,user_id,type_key,start_date,end_date,reason,status,approved_by,approved_at,created_at')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      const rows = Array.isArray(data) ? data : [];
+      return rows.map((row: any) => ({
+        id: String(row.id),
+        userId: String(row.user_id),
+        type: ((): LeaveRequest['type'] => {
+          const k = (row.type_key || '').toString().toLowerCase();
+          if (k === 'annual') return 'annual';
+          if (k === 'sick') return 'sick';
+          if (k === 'unpaid') return 'personal';
+          if (k === 'compassionate') return 'emergency';
+          return 'annual';
+        })(),
         startDate: new Date(row.start_date),
         endDate: new Date(row.end_date),
         reason: String(row.reason || ''),
         status: (row.status as LeaveRequest['status']) || 'pending',
-        requestedAt: new Date(row.requested_at || row.created_at || Date.now()),
+        requestedAt: new Date(row.created_at || Date.now()),
         approvedBy: row.approved_by ? String(row.approved_by) : undefined,
         approvedAt: row.approved_at ? new Date(row.approved_at) : undefined,
       } as LeaveRequest));
@@ -39,7 +153,41 @@ export class LeaveService {
         .eq('user_id', userId)
         .maybeSingle();
       if (error) throw error;
-      if (!data) return null;
+      if (!data) {
+        // Fallback: compute from approved leaves this year with default entitlements
+        const year = new Date().getFullYear();
+        const start = `${year}-01-01`;
+        const end = `${year}-12-31`;
+        const { data: leaves, error: leavesErr } = await supabase
+          .from('leaves')
+          .select('type_key,start_date,end_date,status')
+          .eq('user_id', userId)
+          .eq('status', 'approved')
+          .lte('start_date', end)
+          .gte('end_date', start);
+        if (leavesErr) throw leavesErr;
+        const used = { annual: 0, sick: 0, unpaid: 0 } as Record<string, number>;
+        (leaves || []).forEach((row: any) => {
+          const k = (row.type_key || '').toString().toLowerCase();
+          const startD = new Date(row.start_date);
+          const endD = new Date(row.end_date);
+          const days = Math.max(1, Math.ceil((endD.getTime() - startD.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+          if (k === 'annual') used.annual += days;
+          else if (k === 'sick') used.sick += days;
+          else if (k === 'unpaid') used.unpaid += days;
+        });
+        return {
+          userId,
+          year,
+          // Defaults; adjust if your org uses different entitlements
+          annualDaysTotal: 20,
+          annualDaysUsed: used.annual,
+          sickDaysTotal: 10,
+          sickDaysUsed: used.sick,
+          personalDaysTotal: 5, // maps to unpaid
+          personalDaysUsed: used.unpaid,
+        } as LeaveBalance;
+      }
       return {
         userId: String(data.user_id),
         year: Number(data.year || new Date().getFullYear()),
@@ -58,24 +206,45 @@ export class LeaveService {
 
   static async submitLeaveRequest(request: Omit<LeaveRequest, 'id' | 'requestedAt' | 'status'>): Promise<LeaveRequest> {
     try {
+      // Map legacy LeaveRequest.type to leave_types.key for the new `leaves` table
+      // Known keys (seeded): annual, sick, unpaid, compassionate
+      const mapTypeKey = (t: LeaveRequest['type']): string | null => {
+        const key = (t || '').toString().toLowerCase();
+        if (key === 'annual') return 'annual';
+        if (key === 'sick') return 'sick';
+        if (key === 'personal') return 'unpaid';
+        if (key === 'emergency') return 'compassionate';
+        if (['unpaid','compassionate'].includes(key)) return key;
+        return null;
+      };
+
       const payload = {
         user_id: request.userId,
-        type: request.type,
-        start_date: request.startDate,
-        end_date: request.endDate,
+        type_key: mapTypeKey(request.type),
+        start_date: new Date(request.startDate).toISOString().slice(0, 10),
+        end_date: new Date(request.endDate).toISOString().slice(0, 10),
         reason: request.reason,
-        status: 'pending',
+        status: 'pending' as const,
       };
       const { data, error } = await supabase
-        .from('leave_requests')
+        .from('leaves')
         .insert(payload)
-        .select('*')
+        .select('id,user_id,type_key,start_date,end_date,reason,status,approved_by,approved_at,created_at')
         .single();
       if (error) throw error;
       return {
         id: String(data.id),
         userId: String(data.user_id),
-        type: data.type as LeaveRequest['type'],
+        // Convert back to our legacy type for UI continuity
+        type: ((): LeaveRequest['type'] => {
+          const k = (data.type_key || '').toString().toLowerCase();
+          if (k === 'annual') return 'annual';
+          if (k === 'sick') return 'sick';
+          if (k === 'unpaid') return 'personal';
+          if (k === 'compassionate') return 'emergency';
+          // Default to annual if unknown
+          return 'annual';
+        })(),
         startDate: new Date(data.start_date),
         endDate: new Date(data.end_date),
         reason: String(data.reason || ''),
@@ -93,24 +262,37 @@ export class LeaveService {
   static async getAllApprovedLeave(): Promise<(LeaveRequest & { user: User })[]> {
     try {
       const { data, error } = await supabase
-        .from('leave_requests')
-        .select('*')
+        .from('leaves')
+        .select('id,user_id,type_key,start_date,end_date,reason,status,approved_by,approved_at,created_at, profiles:profiles!inner(id,full_name,role)')
         .eq('status', 'approved');
       if (error) throw error;
       const rows = Array.isArray(data) ? data : [];
-      // Without a join to users, return minimal user info
       return rows.map((row: any) => ({
         id: String(row.id),
         userId: String(row.user_id),
-        type: row.type as LeaveRequest['type'],
+        type: ((): LeaveRequest['type'] => {
+          const k = (row.type_key || '').toString().toLowerCase();
+          if (k === 'annual') return 'annual';
+          if (k === 'sick') return 'sick';
+          if (k === 'unpaid') return 'personal';
+          if (k === 'compassionate') return 'emergency';
+          return 'annual';
+        })(),
         startDate: new Date(row.start_date),
         endDate: new Date(row.end_date),
         reason: String(row.reason || ''),
         status: (row.status as LeaveRequest['status']) || 'approved',
-        requestedAt: new Date(row.requested_at || row.created_at || Date.now()),
+        requestedAt: new Date(row.created_at || Date.now()),
         approvedBy: row.approved_by ? String(row.approved_by) : undefined,
         approvedAt: row.approved_at ? new Date(row.approved_at) : undefined,
-        user: { id: String(row.user_id), email: '', name: '', role: 'technician', createdAt: new Date() },
+        user: {
+          id: String(row.user_id),
+          email: '',
+          name: String(row.profiles?.full_name || ''),
+          role: (row.profiles?.role as User['role']) || 'technician',
+          createdAt: new Date(),
+          // profilePhoto is optional; keep undefined unless you add it to select above
+        },
       }));
     } catch (err) {
       console.warn('Failed to fetch approved leave:', err);

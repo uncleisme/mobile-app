@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { LeaveService } from '../../services/LeaveService';
 import { Header } from '../layout/Header';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { Button } from '../ui/Button';
@@ -22,7 +23,84 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
   const { user } = useAuth();
   const [locationNames, setLocationNames] = useState<Record<string, string>>({});
   const [profileNames, setProfileNames] = useState<Record<string, string>>({});
-  const isAdmin = (user as any)?.role === 'admin';
+  const roleStr = ((user as any)?.role || '').toString().toLowerCase();
+  const isAdmin = ['admin', 'administrator', 'superadmin', 'owner'].includes(roleStr) || (user as any)?.isAdmin === true;
+  // Leave management (admin) - date range placeholders
+  const [leaveStart, setLeaveStart] = useState<string>('');
+  const [leaveEnd, setLeaveEnd] = useState<string>('');
+  const [leaveLoading, setLeaveLoading] = useState<boolean>(false);
+  const [leaveList, setLeaveList] = useState<Array<{ id: string; userId: string; fullName: string; typeKey: string | null; startDate: string; endDate: string }>>([]);
+  // Leave approvals (admin)
+  const [pendingLeaves, setPendingLeaves] = useState<Array<{ id: string; userId: string; fullName: string; typeKey: string | null; startDate: string; endDate: string; reason: string | null }>>([]);
+  const [pendingLoading, setPendingLoading] = useState<boolean>(false);
+  // Approvals list with technician-preferred filtering, but falls back to all if none match
+  const { technicianPending, displayPending } = React.useMemo(() => {
+    const tech = pendingLeaves.filter((p: any) => {
+      const r = (p.role || '').toString().toLowerCase();
+      return r === 'technician' || r.includes('tech');
+    });
+    return { technicianPending: tech, displayPending: tech.length > 0 ? tech : pendingLeaves };
+  }, [pendingLeaves]);
+
+  // Fetch leave data for admin based on date filters
+  useEffect(() => {
+    if (!isAdmin) return;
+    let active = true;
+    const load = async () => {
+      try {
+        setLeaveLoading(true);
+        const data = (leaveStart && leaveEnd)
+          ? await LeaveService.getOnLeaveInRange(leaveStart, leaveEnd)
+          : await LeaveService.getOnLeaveToday();
+        if (!active) return;
+        setLeaveList(data);
+      } catch (e) {
+        if (!active) return;
+        console.warn('Failed loading leave data', e);
+        setLeaveList([]);
+      } finally {
+        if (active) setLeaveLoading(false);
+      }
+    };
+    load();
+    return () => { active = false; };
+  }, [isAdmin, leaveStart, leaveEnd]);
+
+  // Fetch pending leaves for admin
+  useEffect(() => {
+    if (!isAdmin) return;
+    let active = true;
+    const loadPending = async () => {
+      try {
+        setPendingLoading(true);
+        const rows = await LeaveService.getPendingLeaves();
+        if (!active) return;
+        setPendingLeaves(rows);
+      } catch (e) {
+        if (!active) return;
+        console.warn('Failed loading pending leaves', e);
+        setPendingLeaves([]);
+      } finally {
+        if (active) setPendingLoading(false);
+      }
+    };
+    loadPending();
+    return () => { active = false; };
+  }, [isAdmin]);
+
+  // Manual refresh for approvals list
+  const refreshPendingLeaves = async () => {
+    if (!isAdmin) return;
+    try {
+      setPendingLoading(true);
+      const rows = await LeaveService.getPendingLeaves();
+      setPendingLeaves(rows);
+    } catch (e) {
+      console.warn('Failed refreshing pending leaves', e);
+    } finally {
+      setPendingLoading(false);
+    }
+  };
 
   // Greeting is now rendered in the Header component.
 
@@ -116,10 +194,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
 
       try {
         setLoading(true);
-        const isAdmin = (user as any)?.role === 'admin';
-        const orders = isAdmin
-          ? await WorkOrderService.getAllWorkOrders()
-          : await WorkOrderService.getWorkOrdersForTechnician(user.id);
+        // Option A: always load all work orders so technicians can compare peers
+        const orders = await WorkOrderService.getAllWorkOrders();
         setWorkOrders(Array.isArray(orders) ? orders : []);
       } catch (error) {
         console.error('Failed to load work orders:', error);
@@ -135,9 +211,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
   const reload = async () => {
     if (!user?.id) return;
     try {
-      const orders = isAdmin
-        ? await WorkOrderService.getAllWorkOrders()
-        : await WorkOrderService.getWorkOrdersForTechnician(user.id);
+      // Option A: always load all work orders so technicians can compare peers
+      const orders = await WorkOrderService.getAllWorkOrders();
       setWorkOrders(Array.isArray(orders) ? orders : []);
     } catch (e) {
       console.error('Dashboard reload failed:', e);
@@ -215,6 +290,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
   const reviewCount = workOrders.filter(wo => (wo.status || '').toLowerCase() === 'review').length;
   const doneCount = workOrders.filter(wo => (wo.status || '').toLowerCase() === 'completed').length;
 
+  // (overall workload bar removed)
+
   // Admin derived lists
   const approvalsList = isAdmin
     ? workOrders.filter(w => (w.status || '').toLowerCase().includes('review'))
@@ -222,6 +299,31 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
   const unassignedList = isAdmin
     ? workOrders.filter(w => !(w.assigned_to || (w as any).assignedTo))
     : [];
+
+  // Aggregate workload by technician (admin view)
+  const technicianAgg = React.useMemo(() => {
+    type Agg = { active: number; review: number; done: number; total: number };
+    const map = new Map<string, Agg>();
+    for (const w of workOrders) {
+      const assignee = (w.assigned_to || (w as any).assignedTo || 'unassigned') as string;
+      const status = (w.status || '').toLowerCase();
+      const rec = map.get(assignee) || { active: 0, review: 0, done: 0, total: 0 };
+      if (status.includes('complete') || status.includes('done') || status.includes('closed')) {
+        rec.done += 1;
+      } else if (status.includes('review')) {
+        rec.review += 1;
+      } else {
+        // treat everything else as active/pending
+        rec.active += 1;
+      }
+      rec.total = rec.active + rec.review + rec.done;
+      map.set(assignee, rec);
+    }
+    // Convert to array and sort by total desc, then name asc
+    const arr = Array.from(map.entries()).map(([id, agg]) => ({ id, ...agg }));
+    arr.sort((a, b) => b.total - a.total || (profileNames[a.id] || a.id).localeCompare(profileNames[b.id] || b.id));
+    return arr;
+  }, [workOrders, profileNames]);
 
   const handleApprove = async (id?: string) => {
     if (!id) return;
@@ -351,6 +453,78 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
               )}
             </Card>
 
+            {/* Leave Approvals */}
+            <Card>
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Leave Approvals</h2>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">{displayPending.length}</span>
+                  <Button size="sm" variant="secondary" onClick={refreshPendingLeaves}>
+                    Refresh
+                  </Button>
+                </div>
+              </div>
+              {pendingLoading ? (
+                <div className="text-sm text-gray-600 dark:text-gray-400">Loading…</div>
+              ) : displayPending.length === 0 ? (
+                <div className="text-sm text-gray-600 dark:text-gray-400">No pending leave requests</div>
+              ) : (
+                <div className="space-y-3">
+                  {displayPending.map((lv: any) => (
+                    <Card key={lv.id} className="p-3">
+                      <div className="flex items-start gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-gray-900 dark:text-gray-100 truncate">{lv.fullName}</p>
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] rounded-full bg-amber-600 text-white">Pending</span>
+                            {lv.role && (
+                              <span className="ml-1 inline-flex items-center gap-1 px-2 py-0.5 text-[10px] rounded-full bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300">{(lv.role || '').toString()}</span>
+                            )}
+                          </div>
+                          <div className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+                            {lv.startDate} → {lv.endDate}
+                            {lv.typeKey && (
+                              <span className="ml-2 inline-block px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 uppercase">{lv.typeKey}</span>
+                            )}
+                          </div>
+                          {lv.reason && (
+                            <p className="mt-1 text-xs text-gray-600 dark:text-gray-400 line-clamp-2">{lv.reason}</p>
+                          )}
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <Button
+                            onClick={async () => {
+                              if (!user?.id) return;
+                              const ok = await LeaveService.approveLeave(lv.id, user.id);
+                              if (ok) {
+                                setPendingLeaves(prev => prev.filter((p: any) => p.id !== lv.id));
+                              }
+                            }}
+                            size="sm"
+                          >
+                            Approve
+                          </Button>
+                          <Button
+                            onClick={async () => {
+                              if (!user?.id) return;
+                              const ok = await LeaveService.rejectLeave(lv.id, user.id);
+                              if (ok) {
+                                setPendingLeaves(prev => prev.filter((p: any) => p.id !== lv.id));
+                              }
+                            }}
+                            variant="secondary"
+                            size="sm"
+                          >
+                            Reject
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </Card>
+
             {/* Unassigned */}
             <Card>
               <div className="flex items-center justify-between mb-2">
@@ -396,6 +570,109 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
                   <div className="text-xs font-medium text-white/90">Done</div>
                   <div className="mt-1 text-2xl font-bold">{doneCount}</div>
                 </div>
+              </div>
+            </Card>
+
+            {/* Technician comparison (stacked bars) - admin view */}
+            <Card>
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Technician Workload</h2>
+                <div className="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-400">
+                  <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-amber-600" /> Active</span>
+                  <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-violet-700" /> Review</span>
+                  <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-green-600" /> Done</span>
+                </div>
+              </div>
+              {technicianAgg.length === 0 ? (
+                <div className="text-sm text-gray-600 dark:text-gray-400">No technician assignments</div>
+              ) : (
+                <div className="space-y-3">
+                  {technicianAgg.map(t => {
+                    const name = t.id === 'unassigned' ? 'Unassigned' : (profileNames[t.id] || t.id);
+                    const pctA = t.total ? Math.round((t.active / t.total) * 100) : 0;
+                    const pctR = t.total ? Math.round((t.review / t.total) * 100) : 0;
+                    const pctD = t.total ? Math.round((t.done / t.total) * 100) : 0;
+                    return (
+                      <div key={t.id} className="">
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="truncate text-sm text-gray-900 dark:text-gray-100">{name}</div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">{t.total}</div>
+                        </div>
+                        <div className="w-full h-3 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
+                          {t.total === 0 ? (
+                            <div className="w-full h-full bg-gray-300 dark:bg-gray-700" />
+                          ) : (
+                            <div className="flex w-full h-full">
+                              {pctA > 0 && <div className="bg-amber-600" style={{ width: `${pctA}%` }} />}
+                              {pctR > 0 && <div className="bg-violet-700" style={{ width: `${pctR}%` }} />}
+                              {pctD > 0 && <div className="bg-green-600" style={{ width: `${pctD}%` }} />}
+                            </div>
+                          )}
+                        </div>
+                        <div className="mt-1 text-[10px] text-gray-600 dark:text-gray-400 flex gap-3">
+                          <span>Active {t.active}</span>
+                          <span>Review {t.review}</span>
+                          <span>Done {t.done}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </Card>
+            
+            {/* Leave Management (placeholder) */}
+            <Card>
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Leave Management</h2>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                <div>
+                  <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">From date</label>
+                  <input
+                    type="date"
+                    className="w-full px-3 py-2 rounded-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"
+                    value={leaveStart}
+                    onChange={(e) => setLeaveStart(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">To date</label>
+                  <input
+                    type="date"
+                    className="w-full px-3 py-2 rounded-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"
+                    value={leaveEnd}
+                    onChange={(e) => setLeaveEnd(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="mt-2">
+                <div className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+                  {leaveStart && leaveEnd ? 'On leave in selected range' : 'On leave today'}
+                </div>
+                {leaveLoading ? (
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Loading…</div>
+                ) : leaveList.length === 0 ? (
+                  <div className="text-sm text-gray-600 dark:text-gray-400">No staff on leave</div>
+                ) : (
+                  <ul className="divide-y divide-gray-200 dark:divide-gray-800">
+                    {leaveList.map(item => (
+                      <li key={item.id} className="py-2 flex items-center justify-between">
+                        <div className="min-w-0">
+                          <div className="text-sm text-gray-900 dark:text-gray-100 truncate">{item.fullName}</div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">
+                            {item.startDate} → {item.endDate}
+                          </div>
+                        </div>
+                        {item.typeKey && (
+                          <span className="ml-3 text-[10px] px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 uppercase">
+                            {item.typeKey}
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             </Card>
 
@@ -525,33 +802,34 @@ export const Dashboard: React.FC<DashboardProps> = ({ onWorkOrderClick, refreshK
             </Card>
           );
         })()}
-        
-          {/* Metrics: Active+Pending, Review, Done */}
-          <Card>
-            <div className="grid grid-cols-3 gap-3">
-              {/* Active */}
-              <div className="p-3 rounded-lg bg-amber-600 text-white text-center">
-                <div className="text-xs font-medium text-white/90">Active</div>
-                <div className="mt-1 text-2xl font-bold">{activePendingCount}</div>
-              </div>
-              {/* Review */}
-              <div className="p-3 rounded-lg bg-violet-700 text-white text-center">
-                <div className="text-xs font-medium text-white/90">Review</div>
-                <div className="mt-1 text-2xl font-bold">{reviewCount}</div>
-              </div>
-              {/* Done */}
-              <div className="p-3 rounded-lg bg-green-600 text-white text-center">
-                <div className="text-xs font-medium text-white/90">Done</div>
-                <div className="mt-1 text-2xl font-bold">{doneCount}</div>
-              </div>
+
+        {/* Metrics: Active+Pending, Review, Done */}
+        <Card>
+          <div className="grid grid-cols-3 gap-3">
+            {/* Active */}
+            <div className="p-3 rounded-lg bg-amber-600 text-white text-center">
+              <div className="text-xs font-medium text-white/90">Active</div>
+              <div className="mt-1 text-2xl font-bold">{activePendingCount}</div>
             </div>
-          </Card>
+            {/* Review */}
+            <div className="p-3 rounded-lg bg-violet-700 text-white text-center">
+              <div className="text-xs font-medium text-white/90">Review</div>
+              <div className="mt-1 text-2xl font-bold">{reviewCount}</div>
+            </div>
+            {/* Done */}
+            <div className="p-3 rounded-lg bg-green-600 text-white text-center">
+              <div className="text-xs font-medium text-white/90">Done</div>
+              <div className="mt-1 text-2xl font-bold">{doneCount}</div>
+            </div>
+          </div>
+        </Card>
 
-          {/* Today's Work Orders moved into Header notifications dropdown */}
+        
 
-          {/* Activity (latest notifications) */}
-          <Activity />
-        </React.Fragment>)}
+        {/* Activity (latest notifications) */}
+        <Activity />
+        </React.Fragment>
+        )}
       </div>
     </div>
   );
