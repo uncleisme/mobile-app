@@ -11,12 +11,12 @@ importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-com
 // TODO: Replace with your Firebase web app config
 // You must keep these in sync with src/config/firebase.ts
 self.firebaseConfig = {
-  apiKey: 'YOUR_API_KEY',
-  authDomain: 'YOUR_PROJECT.firebaseapp.com',
-  projectId: 'YOUR_PROJECT_ID',
-  storageBucket: 'YOUR_PROJECT.appspot.com',
-  messagingSenderId: 'YOUR_SENDER_ID',
-  appId: 'YOUR_APP_ID',
+  apiKey: 'AIzaSyCHpJHzj_lY5uGTzAlBJYNxVkGU4gue4n4',
+  authDomain: 'propmanager-7677c.firebaseapp.com',
+  projectId: 'propmanager-7677c',
+  storageBucket: 'propmanager-7677c.firebasestorage.app',
+  messagingSenderId: '958691733281',
+  appId: '1:958691733281:web:4dbbc987051305c0751860',
 };
 
 // eslint-disable-next-line no-undef

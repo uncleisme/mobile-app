@@ -12,18 +12,21 @@ import { BottomNavigation } from './components/layout/BottomNavigation';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LoadingSpinner } from './components/ui/LoadingSpinner';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { PushService } from './services/PushService';
+import { FIREBASE_WEB_CONFIG } from './config/firebase';
 
 type AppView = 'dashboard' | 'work-orders' | 'leave' | 'profile' | 'settings';
 type WorkOrderView = 'list' | 'detail' | 'complete';
 
 // Main App Content Component (wrapped by AuthProvider)
 function AppContent() {
-  const { loading } = useAuth();
+  const { loading, user } = useAuth();
   const [activeTab, setActiveTab] = useState<AppView>('dashboard');
   const [workOrderView, setWorkOrderView] = useState<WorkOrderView>('list');
   const [selectedWorkOrderId, setSelectedWorkOrderId] = useState<string>('');
   const [selectedWorkOrderTitle, setSelectedWorkOrderTitle] = useState<string>('');
   const [refreshKey, setRefreshKey] = useState<number>(0);
+  const [pushRegistered, setPushRegistered] = useState(false);
 
   // Initialize theme (dark/light) on mount
   useEffect(() => {
@@ -34,6 +37,28 @@ function AppContent() {
       document.documentElement.classList.toggle('dark', isDark);
     } catch {}
   }, []);
+
+  // Register Web Push after authentication
+  useEffect(() => {
+    const canUsePush = () =>
+      typeof window !== 'undefined' &&
+      'Notification' in window &&
+      'serviceWorker' in navigator &&
+      (window.isSecureContext || window.location.hostname === 'localhost');
+
+    (async () => {
+      try {
+        if (!user || loading || pushRegistered) return;
+        if (!canUsePush()) return;
+        // Guard against placeholder config
+        if (!FIREBASE_WEB_CONFIG.apiKey || FIREBASE_WEB_CONFIG.apiKey === 'YOUR_API_KEY') return;
+        await PushService.registerForPush(FIREBASE_WEB_CONFIG, user.id);
+        setPushRegistered(true);
+      } catch (e) {
+        console.warn('Push registration failed:', e);
+      }
+    })();
+  }, [user, loading, pushRegistered]);
 
   const handleWorkOrderClick = (workOrderId: string) => {
     setSelectedWorkOrderId(workOrderId);
