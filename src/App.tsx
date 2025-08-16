@@ -27,6 +27,7 @@ function AppContent() {
   const [selectedWorkOrderTitle, setSelectedWorkOrderTitle] = useState<string>('');
   const [refreshKey, setRefreshKey] = useState<number>(0);
   const [pushRegistered, setPushRegistered] = useState(false);
+  const [toast, setToast] = useState<{ title: string; body?: string } | null>(null);
 
   // Initialize theme (dark/light) on mount
   useEffect(() => {
@@ -59,6 +60,18 @@ function AppContent() {
       }
     })();
   }, [user, loading, pushRegistered]);
+
+  // Foreground FCM toast listener
+  useEffect(() => {
+    const unsubscribe = PushService.addForegroundListener((payload: any) => {
+      const title = payload?.notification?.title || payload?.data?.title || 'Notification';
+      const body = payload?.notification?.body || payload?.data?.body || '';
+      setToast({ title, body });
+      // auto-hide after 4s
+      setTimeout(() => setToast(null), 4000);
+    });
+    return unsubscribe;
+  }, []);
 
   const handleWorkOrderClick = (workOrderId: string) => {
     setSelectedWorkOrderId(workOrderId);
@@ -169,6 +182,16 @@ function AppContent() {
               setWorkOrderView('list');
             }}
           />
+        )}
+
+        {/* Minimal toast for foreground FCM messages */}
+        {toast && (
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 max-w-sm w-[90%] sm:w-auto">
+            <div className="rounded-lg shadow-lg px-4 py-3 bg-white text-gray-900 dark:bg-gray-800 dark:text-gray-100 border border-gray-200 dark:border-gray-700">
+              <div className="font-medium">{toast.title}</div>
+              {toast.body && <div className="text-sm opacity-80 mt-1">{toast.body}</div>}
+            </div>
+          </div>
         )}
       </div>
     </ProtectedRoute>

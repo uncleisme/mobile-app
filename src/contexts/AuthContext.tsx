@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User } from '../types';
 import { AuthService } from '../services/AuthService';
+import { PushService } from '../services/PushService';
+import { FIREBASE_WEB_CONFIG } from '../config/firebase';
 
 interface AuthContextType {
   user: User | null;
@@ -70,6 +72,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = async (): Promise<void> => {
     try {
       setLoading(true);
+      // Best-effort token cleanup before logging out
+      if (user) {
+        try {
+          await PushService.deleteCurrentToken(FIREBASE_WEB_CONFIG as any, user.id);
+        } catch (e) {
+          console.debug('Push token cleanup failed (non-fatal):', e);
+        }
+      }
+
       await AuthService.logout();
       
       setUser(null);
