@@ -80,11 +80,36 @@ export class LeaveService {
 
   static async approveLeave(id: string, adminId: string): Promise<boolean> {
     try {
+      // Fetch leave owner and dates for notification context
+      let leaveOwner: { user_id: string; start_date: string; end_date: string } | null = null;
+      try {
+        const { data: lv, error: lvErr } = await supabase
+          .from('leaves')
+          .select('user_id,start_date,end_date')
+          .eq('id', id)
+          .maybeSingle();
+        if (!lvErr && lv) {
+          leaveOwner = { user_id: String(lv.user_id), start_date: String(lv.start_date), end_date: String(lv.end_date) };
+        }
+      } catch {}
+
       const { error } = await supabase
         .from('leaves')
         .update({ status: 'approved', approved_by: adminId, approved_at: new Date().toISOString() })
         .eq('id', id);
       if (error) throw error;
+
+      // Notification for requester
+      if (leaveOwner) {
+        const range = `${leaveOwner.start_date} - ${leaveOwner.end_date}`;
+        await LeaveService.createNotification({
+          module: 'Leave',
+          action: 'approved',
+          entity_id: id,
+          message: `Your leave (${range}) has been approved`,
+          recipients: [leaveOwner.user_id],
+        });
+      }
       return true;
     } catch (err) {
       console.error('Approve leave failed:', err);
@@ -94,11 +119,36 @@ export class LeaveService {
 
   static async rejectLeave(id: string, adminId: string): Promise<boolean> {
     try {
+      // Fetch leave owner and dates for notification context
+      let leaveOwner: { user_id: string; start_date: string; end_date: string } | null = null;
+      try {
+        const { data: lv, error: lvErr } = await supabase
+          .from('leaves')
+          .select('user_id,start_date,end_date')
+          .eq('id', id)
+          .maybeSingle();
+        if (!lvErr && lv) {
+          leaveOwner = { user_id: String(lv.user_id), start_date: String(lv.start_date), end_date: String(lv.end_date) };
+        }
+      } catch {}
+
       const { error } = await supabase
         .from('leaves')
         .update({ status: 'rejected', approved_by: adminId, approved_at: new Date().toISOString() })
         .eq('id', id);
       if (error) throw error;
+
+      // Notification for requester
+      if (leaveOwner) {
+        const range = `${leaveOwner.start_date} - ${leaveOwner.end_date}`;
+        await LeaveService.createNotification({
+          module: 'Leave',
+          action: 'rejected',
+          entity_id: id,
+          message: `Your leave (${range}) has been rejected`,
+          recipients: [leaveOwner.user_id],
+        });
+      }
       return true;
     } catch (err) {
       console.error('Reject leave failed:', err);
@@ -253,6 +303,20 @@ export class LeaveService {
         .select('id,user_id,type_key,start_date,end_date,reason,status,approved_by,approved_at,created_at')
         .single();
       if (error) throw error;
+
+      // Notify requester that the leave request was submitted
+      try {
+        const range = `${payload.start_date} - ${payload.end_date}`;
+        await LeaveService.createNotification({
+          module: 'Leave',
+          action: 'requested',
+          entity_id: String(data.id),
+          message: `Leave request submitted (${range})`,
+          recipients: [String(data.user_id)],
+        });
+      } catch (e) {
+        console.warn('Leave submit: notification failed (non-fatal):', e);
+      }
       return {
         id: String(data.id),
         userId: String(data.user_id),
@@ -277,6 +341,34 @@ export class LeaveService {
     } catch (err) {
       console.error('Failed to submit leave request:', err);
       throw err instanceof Error ? err : new Error('Failed to submit leave request');
+    }
+  }
+
+  /**
+   * Create a notification row for the current logged-in user or specific recipients
+   */
+  private static async createNotification(params: {
+    module: string;
+    action: string;
+    entity_id: string;
+    message: string;
+    recipients?: string[] | null;
+  }): Promise<void> {
+    try {
+      const { data: auth } = await supabase.auth.getUser();
+      const userId = auth?.user?.id || null;
+      const payload: any = {
+        user_id: userId,
+        module: params.module,
+        action: params.action,
+        entity_id: params.entity_id,
+        message: params.message,
+        recipients: params.recipients ?? (userId ? [userId] : null),
+      };
+      const { error } = await supabase.from('notifications').insert([payload]);
+      if (error) throw error;
+    } catch (e) {
+      console.warn('Failed to create notification (leave):', e);
     }
   }
 
